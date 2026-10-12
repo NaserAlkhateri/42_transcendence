@@ -62,6 +62,29 @@ Browser / approved API partner
 
 Add proper foreign keys, unique constraints, indexes (VIN, records, organization, watchlist), and migrations. Prefer explicit relational constraints over duplicated fields.
 
+### Entity-relationship diagram
+
+```mermaid
+erDiagram
+    users ||--o{ sessions : "has"
+    users ||--o{ organization_members : "member through"
+    organizations ||--o{ organization_members : "has"
+    organizations ||--o{ api_keys : "owns"
+    vehicles ||--o{ service_records : "history"
+    organizations |o--o{ service_records : "submitted by (SET NULL on delete)"
+    users |o--o{ service_records : "staff (SET NULL on delete)"
+    service_records |o--o{ service_records : "corrects"
+    service_records ||--o{ attachments : "evidence"
+    users ||--o{ watchlists : "watches"
+    vehicles ||--o{ watchlists : "watched by"
+    users ||--o{ notifications : "receives"
+    api_keys ||--o{ partner_watchlists : "watches"
+    vehicles ||--o{ partner_watchlists : "watched by"
+    users |o--o{ audit_events : "actor (SET NULL on delete)"
+```
+
+Source of truth: `backend/app/models/` and `backend/alembic/versions/`.
+
 ## Critical domain logic
 1. Validate VIN format and normalize case at both frontend and backend; backend is authoritative.
 2. Only an **approved** organization with an **active** authorized staff membership can append service records.
