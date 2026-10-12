@@ -1,13 +1,15 @@
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, StringConstraints
 
-from app.models import UserRole
+from app.models import MemberRole, MemberStatus, OrganizationStatus, UserRole
 
 PASSWORD_MIN_LENGTH = 10
 PASSWORD_MAX_LENGTH = 128
+
+EffectiveRole = Literal["platform_admin", "entity_admin", "entity_staff", "consumer"]
 
 # The users table enforces lower-case emails; normalise here so "Ali@X.ae" and "ali@x.ae" are one account.
 Email = Annotated[EmailStr, Field(max_length=320), AfterValidator(str.lower)]
@@ -35,17 +37,27 @@ class PasswordChange(BaseModel):
     new_password: Password
 
 
-class UserOut(BaseModel):
-    """The signed-in user's own account. Never includes the password hash or sessions."""
+class MembershipOut(BaseModel):
+    id: uuid.UUID
+    organization_id: uuid.UUID
+    organization_name: str
+    organization_status: OrganizationStatus
+    role: MemberRole
+    status: MemberStatus
 
-    model_config = ConfigDict(from_attributes=True)
+
+class UserOut(BaseModel):
+    """A user account as its owner sees it. Never includes the password hash or sessions.
+    `role` is the platform role; `effective_role` folds in active memberships for role-based views."""
 
     id: uuid.UUID
     email: str
     full_name: str
     role: UserRole
+    effective_role: EffectiveRole
     must_change_password: bool
     created_at: datetime
+    memberships: list[MembershipOut]
 
 
 class CsrfToken(BaseModel):
