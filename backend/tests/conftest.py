@@ -2,6 +2,8 @@ import os
 from collections.abc import Iterator
 
 import pytest
+from alembic import command
+from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
@@ -26,7 +28,17 @@ def database_url() -> Iterator[str]:
 
 
 @pytest.fixture(scope="session")
-def engine(database_url: str) -> Iterator[Engine]:
+def alembic_cfg(database_url: str) -> Config:
+    config = Config(os.path.join(BACKEND_DIR, "alembic.ini"))
+    config.set_main_option("script_location", os.path.join(BACKEND_DIR, "alembic"))
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
+    config.attributes["configure_logger"] = False
+    return config
+
+
+@pytest.fixture(scope="session")
+def engine(database_url: str, alembic_cfg: Config) -> Iterator[Engine]:
+    command.upgrade(alembic_cfg, "head")
     engine = create_engine(database_url)
     yield engine
     engine.dispose()
