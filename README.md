@@ -19,7 +19,7 @@ Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for t
 - Partner API with admin-issued, read-only keys and rate limiting
 - English and Arabic with full right-to-left layout mirroring
 
-## Read these four files first (Claude Code and contributors)
+## Read these four files first (contributors)
 1. `README.md` - 42 compliance, module points, starting instructions and project conventions.
 2. [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md) - Stack, services, database, security and deployment contracts.
 3. [`doc/FEATURES.md`](doc/FEATURES.md) - Product requirements, roles, flows and acceptance checks.
@@ -103,4 +103,4 @@ Not claiming: three-language i18n (English + Arabic only), GDPR minor (its confi
 ## Resources and AI use
 References: the official `ft_transcendence` subject v21.2; [FastAPI documentation](https://fastapi.tiangolo.com/); [SQLAlchemy](https://docs.sqlalchemy.org/); [Alembic](https://alembic.sqlalchemy.org/); [React](https://react.dev/); [Docker Compose](https://docs.docker.com/compose/); [Caddy](https://caddyserver.com/docs/); [NHTSA vPIC API](https://vpic.nhtsa.dot.gov/api/); ISO 3779 (VIN structure).
 
-AI tools such as Claude Code may assist with scaffolding, implementation, tests and documentation. Developers must review every generated change, understand its behavior, test it, and be able to explain it during peer evaluation. Before submission, replace this generic note with the **actual tasks and project areas** where AI was used, and document real individual contributions.
+AI tools may assist with scaffolding, implementation, tests and documentation. Developers must review every generated change, understand its behavior, test it, and be able to explain it during peer evaluation. Before submission, replace this generic note with the **actual tasks and project areas** where AI was used, and document real individual contributions.
