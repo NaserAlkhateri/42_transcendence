@@ -15,6 +15,22 @@ uv run uvicorn app.main:app --reload
 
 API docs: http://localhost:8000/api/v1/docs · health: http://localhost:8000/health
 
+## Authentication (NA-01)
+
+- Email/password with Argon2id hashes. Signup always creates a `consumer`.
+- Server-side sessions: the `sijil_session` cookie (HttpOnly, Secure, SameSite=Lax) holds a random token; only its SHA-256 hash is stored in `sessions`. Logout and password changes revoke sessions.
+- CSRF: every POST/PATCH/PUT/DELETE under `/api/v1` must send `X-CSRF-Token` equal to the `sijil_csrf` cookie (get one from `GET /api/v1/auth/csrf`).
+- Protected routes use `CurrentUser` from `app.auth.dependencies`; it also blocks accounts with a pending temporary password.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/auth/csrf` | Issue the CSRF cookie |
+| POST | `/api/v1/auth/signup` | Create a consumer account and sign in |
+| POST | `/api/v1/auth/login` | Sign in |
+| POST | `/api/v1/auth/logout` | Revoke the current session |
+| GET / PATCH | `/api/v1/me` | Read / update own profile |
+| POST | `/api/v1/me/password` | Change password (signs out other devices) |
+
 ## Tests
 
 Docker must be running: the suite starts a throwaway Postgres 16 container. To use an existing empty database instead, set `TEST_DATABASE_URL`.
