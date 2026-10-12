@@ -4,6 +4,7 @@ from collections.abc import Iterator
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
@@ -19,11 +20,13 @@ def database_url() -> Iterator[str]:
     """TEST_DATABASE_URL if set, otherwise a throwaway Postgres 16 container (Docker must be running)."""
     url = os.environ.get("TEST_DATABASE_URL")
     if url:
+        os.environ.setdefault("DATABASE_URL", url)  # app settings (cookies, session TTL) load from env
         yield url
         return
     from testcontainers.postgres import PostgresContainer
 
     with PostgresContainer("postgres:16-alpine", driver="psycopg") as postgres:
+        os.environ.setdefault("DATABASE_URL", postgres.get_connection_url())
         yield postgres.get_connection_url()
 
 
@@ -58,8 +61,14 @@ def db(engine: Engine) -> Iterator[Session]:
 
 
 @pytest.fixture
-def client(db: Session) -> Iterator[TestClient]:
+def app(db: Session) -> FastAPI:
     app = create_app()
     app.dependency_overrides[get_db] = lambda: db
-    with TestClient(app) as test_client:
+    return app
+
+
+@pytest.fixture
+def client(app: FastAPI) -> Iterator[TestClient]:
+    # https so the client sends back the Secure session/CSRF cookies, as browsers do behind Caddy
+    with TestClient(app, base_url="https://testserver") as test_client:
         yield test_client
