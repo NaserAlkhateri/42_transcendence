@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { useAuth, type User } from '../auth/auth-context'
 import { FormAlert, SubmitButton, TextField } from '../components/TextField'
 import { api, errorMessage, serverFieldErrors } from '../lib/api'
+import { ROLE_LABELS } from '../lib/roles'
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -10,11 +11,6 @@ import {
   validatePasswordChange,
   type FieldErrors,
 } from '../lib/validation'
-
-const ROLE_LABELS: Record<User['role'], string> = {
-  consumer: 'Consumer',
-  platform_admin: 'Platform admin',
-}
 
 export function ProfilePage({ user }: { user: User }) {
   return (
@@ -28,10 +24,26 @@ export function ProfilePage({ user }: { user: User }) {
           <dt className="text-slate-500">Email</dt>
           <dd className="text-slate-900">{user.email}</dd>
           <dt className="text-slate-500">Account type</dt>
-          <dd className="text-slate-900">{ROLE_LABELS[user.role]}</dd>
+          <dd className="text-slate-900">{ROLE_LABELS[user.effective_role]}</dd>
           <dt className="text-slate-500">Member since</dt>
           <dd className="text-slate-900">{new Date(user.created_at).toLocaleDateString()}</dd>
         </dl>
+        {user.memberships.length ? (
+          <div className="mt-6">
+            <h2 className="mb-2 text-lg font-semibold text-slate-900">Organizations</h2>
+            <ul className="flex flex-col gap-1 text-sm">
+              {user.memberships.map((membership) => (
+                <li key={membership.id} className="text-slate-800">
+                  {membership.organization_name} · {ROLE_LABELS[membership.role]}
+                  {membership.organization_status !== 'approved' ? (
+                    <span className="text-amber-800"> · organization {membership.organization_status}</span>
+                  ) : null}
+                  {membership.status === 'inactive' ? <span className="text-slate-500"> · inactive</span> : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
       {user.must_change_password ? null : <NameForm user={user} />}
       <PasswordForm />

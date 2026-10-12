@@ -2,7 +2,7 @@
 
 React + Vite + TypeScript + Tailwind CSS. Design: `doc/ARCHITECTURE.md`.
 
-This is the minimal scaffold from NA-01 (signup, login, logout and profile pages). HA-01 owns the full app shell, routing and API client and may reshape it.
+This is the minimal scaffold from NA-01 and NA-02: signup, login, logout and profile pages, role-based navigation and the platform-admin Users page (`/admin/users`). HA-01 owns the full app shell, routing and API client and may reshape it.
 
 ## Run locally
 
