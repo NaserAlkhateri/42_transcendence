@@ -19,6 +19,7 @@ from app.core.errors import ApiError
 from app.db.session import get_db
 from app.models import User, UserRole, UserStatus
 from app.schemas.auth import CsrfToken, LoginRequest, PasswordChange, ProfileUpdate, SignupRequest, UserOut
+from app.services.users import to_user_out
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 me_router = APIRouter(prefix="/me", tags=["profile"])
@@ -38,7 +39,7 @@ def csrf_token(response: Response) -> CsrfToken:
 
 
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def signup(body: SignupRequest, response: Response, db: DbSession) -> User:
+def signup(body: SignupRequest, response: Response, db: DbSession) -> UserOut:
     """Create a consumer account and sign it in. Entity and admin roles are never self-assigned."""
     user = User(
         email=body.email,
@@ -54,11 +55,11 @@ def signup(body: SignupRequest, response: Response, db: DbSession) -> User:
         raise ApiError(409, "email_taken", "An account with this email already exists.") from exc
     _start_session(db, response, user)
     db.commit()
-    return user
+    return to_user_out(db, user)
 
 
 @router.post("/login", response_model=UserOut)
-def login(body: LoginRequest, response: Response, db: DbSession) -> User:
+def login(body: LoginRequest, response: Response, db: DbSession) -> UserOut:
     user = db.scalar(select(User).where(User.email == body.email))
     if user is None:
         burn_verify_time(body.password)
@@ -68,7 +69,7 @@ def login(body: LoginRequest, response: Response, db: DbSession) -> User:
         raise ApiError(401, "invalid_credentials", "Email or password is incorrect.")
     _start_session(db, response, user)
     db.commit()
-    return user
+    return to_user_out(db, user)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -82,16 +83,16 @@ def logout(request: Request, response: Response, db: DbSession) -> None:
 
 
 @me_router.get("", response_model=UserOut)
-def read_me(auth: CurrentAuth) -> User:
+def read_me(auth: CurrentAuth, db: DbSession) -> UserOut:
     """Available even while a temporary password is pending, so the UI can route to the change form."""
-    return auth.user
+    return to_user_out(db, auth.user)
 
 
 @me_router.patch("", response_model=UserOut)
-def update_me(body: ProfileUpdate, user: CurrentUser, db: DbSession) -> User:
+def update_me(body: ProfileUpdate, user: CurrentUser, db: DbSession) -> UserOut:
     user.full_name = body.full_name
     db.commit()
-    return user
+    return to_user_out(db, user)
 
 
 @me_router.post("/password", status_code=status.HTTP_204_NO_CONTENT)

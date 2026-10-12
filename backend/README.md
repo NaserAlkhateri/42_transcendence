@@ -31,6 +31,24 @@ API docs: http://localhost:8000/api/v1/docs · health: http://localhost:8000/hea
 | GET / PATCH | `/api/v1/me` | Read / update own profile |
 | POST | `/api/v1/me/password` | Change password (signs out other devices) |
 
+## Roles and permissions (NA-02)
+
+Roles: `users.role` is `consumer` or `platform_admin`; `organization_members.role` is `entity_admin` or `entity_staff` per organization. `effective_role` (on `/me` and admin responses) is the highest of these and drives the UI's role-based views.
+
+Guards in `app.auth.permissions`, used on every protected route:
+- `PlatformAdmin`: dependency that only lets platform admins through.
+- `require_org_role(db, user, organization_id, {roles})`: the user must hold one of the roles in an **active** membership of *that* organization (platform admins pass).
+
+| Method | Path | Purpose (platform admin only) |
+| --- | --- | --- |
+| GET | `/api/v1/admin/users?q=&role=&status=&page=&page_size=` | Search, filter and paginate users |
+| GET | `/api/v1/admin/users/{id}` | One user with memberships |
+| PATCH | `/api/v1/admin/users/{id}` | Edit name, email, platform role, status (disabling revokes sessions) |
+| DELETE | `/api/v1/admin/users/{id}` | Really delete the account; service records keep the staff-name snapshot |
+| PATCH | `/api/v1/admin/users/{id}/memberships/{membership_id}` | Switch entity_admin / entity_staff |
+
+Admins cannot demote, disable or delete themselves, so at least one admin always remains. Every edit and delete writes an `audit_events` row.
+
 ## Tests
 
 Docker must be running: the suite starts a throwaway Postgres 16 container. To use an existing empty database instead, set `TEST_DATABASE_URL`.

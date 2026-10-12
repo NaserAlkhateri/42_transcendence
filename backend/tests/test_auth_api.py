@@ -5,36 +5,14 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from app.auth.passwords import hash_password
-from app.models import User, UserRole, UserSession, UserStatus
-
-PASSWORD = "correct-horse-battery"
-
-
-def csrf(client: TestClient) -> dict[str, str]:
-    """Header echoing the current CSRF cookie, fetching one first if the client has none."""
-    if "sijil_csrf" not in client.cookies:
-        client.get("/api/v1/auth/csrf")
-    return {"X-CSRF-Token": client.cookies["sijil_csrf"]}
+from app.models import MemberRole, User, UserRole, UserSession, UserStatus
+from tests.auth_helpers import PASSWORD, add_member, add_user, csrf, login
+from tests.factories import make_org
 
 
 def signup(client: TestClient, email: str = "Layla@Example.ae", **overrides: str):
     body = {"email": email, "password": PASSWORD, "full_name": "Layla Hassan", **overrides}
     return client.post("/api/v1/auth/signup", json=body, headers=csrf(client))
-
-
-def login(client: TestClient, email: str, password: str = PASSWORD):
-    return client.post("/api/v1/auth/login", json={"email": email, "password": password}, headers=csrf(client))
-
-
-def add_user(db: Session, email: str, *, status: UserStatus = UserStatus.ACTIVE, must_change: bool = False) -> User:
-    user = User(
-        email=email, password_hash=hash_password(PASSWORD), full_name="Seeded User",
-        status=status, must_change_password=must_change,
-    )
-    db.add(user)
-    db.flush()
-    return user
 
 
 def set_cookie_header(response, name: str) -> str:
@@ -247,3 +225,15 @@ def test_temporary_password_must_be_changed_before_other_actions(client: TestCli
         headers=csrf(client),
     )
     assert client.patch("/api/v1/me", json={"full_name": "New"}, headers=csrf(client)).status_code == 200
+
+
+def test_me_reports_effective_role_and_memberships(client: TestClient, db: Session) -> None:
+    user = add_user(db, "tech@example.ae")
+    add_member(db, make_org(db, name="Me Garage"), user, MemberRole.ENTITY_STAFF)
+    login(client, user.email)
+
+    body = client.get("/api/v1/me").json()
+
+    assert body["role"] == "consumer"
+    assert body["effective_role"] == "entity_staff"
+    assert [(m["organization_name"], m["role"]) for m in body["memberships"]] == [("Me Garage", "entity_staff")]
