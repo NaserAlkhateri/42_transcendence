@@ -76,6 +76,19 @@ Active `entity_staff` and `entity_admin` members of an **approved** organization
 - The correction's flag is computed against the history it joins, without the original. Later readings are compared with the corrected value, not the mistake.
 - The public timeline shows `correction_reason` (a fixed list, so no free text or personal data reaches consumers).
 
+## PDF report (AG-05)
+
+`GET /api/v1/vehicles/{vin}/report.pdf` (public, like the timeline) downloads `sijil-report-{VIN}.pdf`. A VIN without history gets 404 `no_history`.
+
+- **Bilingual:** English on the left, Arabic on the right, for the title, vehicle facts and every record. Arabic is shaped with HarfBuzz (`uharfbuzz`) through `fpdf2`, in bundled Noto Sans / Noto Sans Arabic fonts (`app/reports/fonts`, SIL Open Font License), so it renders the same offline.
+- **Contents:**
+  - The full history, newest first, whatever filters the page has.
+  - For each record: date, category, odometer, workshop, work done, mileage warnings, and each correction directly above the original it replaces, with its reason.
+  - Vehicle facts and the latest effective reading.
+  - A "not an official record" notice on every page.
+- **Consumer-safe:** no staff names, private notes or attachments (`tests/test_report_pdf.py` checks this).
+- The Arabic wording follows `doc/UAE_MARKET.md` and is reviewed by a native speaker during HA-03.
+
 ## Tests
 
 Docker must be running: the suite starts a throwaway Postgres 16 container. To use an existing empty database instead, set `TEST_DATABASE_URL`.

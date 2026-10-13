@@ -1,13 +1,14 @@
 # Sijil - Progress
 
-Last updated: 2026-10-13 (end of week 1, day 2). Update this file when a card moves to Review or Done.
+Last updated: 2026-10-13 (week 2: Agegnew's cards done). Update this file when a card moves to Review or Done.
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
 ## Summary
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
 - **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
-- On `main`: backend 94 tests, frontend 67 tests, lint and build clean.
+- **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
+- On `main`: backend 154 tests, frontend 98 tests, lint and build clean.
 - **Module points earned so far: 0.** Checklists are ticked for Frameworks (HA-01 + AG-01), ORM (AG-01), Advanced permissions (NA-02) and Custom design system (HA-02); each still needs Naser's PO sign-off.
 
 ## Card status
@@ -22,6 +23,9 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
 | BU-01 Architecture and contracts | Burhan | To Do | |
 | BU-02 Docker Compose, Caddy, HTTPS | Burhan | To Do | Blocks the week-1 single-command start |
+| AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for BU-04 |
+| AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
+| AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
 | All other cards (week 2-3) | | Backlog | |
 
 Week-1 review fixes merged on 2026-10-13:
@@ -81,6 +85,7 @@ Dev setup: run the backend on port 8000 (see `backend/README.md`) and `npm run d
 Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint and build clean.
 
 ## Notes for teammates
+- **Everyone (week 2):** `POST /api/v1/organizations/{id}/records` is how history is written. Listen for new records with `app.services.events.subscribe` (`record.added`: VIN, record id, date, flag, corrected id). Burhan's WebSocket (BU-04), Hassan's watchlist alerts (HA-04) and the admin flagged queue (HA-05) can all build on it. Work-code labels (English + Arabic) come from `GET /api/v1/work-codes`.
 - **Hassan (HA-04):** the Watch button lives in `src/components/WatchVinButton.tsx`. Guests are sent to log in and come back to the VIN. Wire the signed-in state to the watchlist API there.
 - **Burhan (BU-02):** the session and CSRF cookies are `Secure`, so the stack has to be served over HTTPS through Caddy. Caddy should route `/api/*` to FastAPI and everything else to the frontend build. `COOKIE_SECURE` and `SESSION_TTL_HOURS` are in `backend/.env.example`.
 - **Agegnew (AG-03 onward):** use `require_org_role` for record submission. Deleting a user leaves their service records in place, with `staff_id` set to NULL and the stored `staff_name` kept.
