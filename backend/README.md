@@ -25,6 +25,7 @@ API docs: http://localhost:8000/api/v1/docs · health: http://localhost:8000/hea
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/api/v1/auth/csrf` | Issue the CSRF cookie |
+| GET | `/api/v1/auth/session` | Current user or `null`; always 200, so the SPA's start-up probe logs no error for guests |
 | POST | `/api/v1/auth/signup` | Create a consumer account and sign in |
 | POST | `/api/v1/auth/login` | Sign in |
 | POST | `/api/v1/auth/logout` | Revoke the current session |
