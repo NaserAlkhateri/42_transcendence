@@ -62,3 +62,9 @@ class UserOut(BaseModel):
 
 class CsrfToken(BaseModel):
     csrf_token: str
+
+
+class SessionState(BaseModel):
+    """GET /auth/session: who is signed in, if anyone."""
+
+    user: UserOut | None

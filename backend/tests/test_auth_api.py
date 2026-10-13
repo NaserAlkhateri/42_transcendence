@@ -146,6 +146,26 @@ def test_disabling_a_user_ends_their_sessions(client: TestClient, db: Session) -
     assert client.get("/api/v1/me").status_code == 401
 
 
+def test_session_probe_answers_200_with_no_user_when_signed_out(client: TestClient) -> None:
+    # The SPA calls this on every page load; a 401 here would print an error in every visitor's console.
+    response = client.get("/api/v1/auth/session")
+    assert response.status_code == 200
+    assert response.json() == {"user": None}
+
+
+def test_session_probe_returns_the_signed_in_user(client: TestClient) -> None:
+    signup(client)
+    response = client.get("/api/v1/auth/session")
+    assert response.status_code == 200
+    assert response.json()["user"]["email"] == "layla@example.ae"
+
+
+def test_session_probe_treats_an_expired_session_as_signed_out(client: TestClient, db: Session) -> None:
+    signup(client)
+    db.execute(update(UserSession).values(expires_at=datetime.now(UTC) - timedelta(minutes=1)))
+    assert client.get("/api/v1/auth/session").json() == {"user": None}
+
+
 def test_me_requires_a_session(client: TestClient) -> None:
     response = client.get("/api/v1/me")
     assert response.status_code == 401

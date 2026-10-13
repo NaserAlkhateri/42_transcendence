@@ -115,6 +115,11 @@ def test_list_paginates(client: TestClient, db: Session, admin: User) -> None:
     assert client.get(USERS, params={"page_size": 101}).status_code == 422
 
 
+def test_page_number_past_any_real_offset_is_rejected_not_a_server_error(client: TestClient, admin: User) -> None:
+    # page=10**21 used to overflow the database OFFSET and answer 500.
+    assert client.get(USERS, params={"page": 10**21}).status_code == 422
+
+
 def test_get_unknown_user_is_404(client: TestClient, admin: User) -> None:
     response = client.get(f"{USERS}/{uuid.uuid4()}")
     assert response.status_code == 404
@@ -178,6 +183,17 @@ def test_edit_validates_and_rejects_taken_email(client: TestClient, db: Session,
     assert client.patch(f"{USERS}/{user.id}", json={"email": "taken@example.ae"}, headers=csrf(client)).status_code == 409
     assert client.patch(f"{USERS}/{user.id}", json={"role": "entity_admin"}, headers=csrf(client)).status_code == 422
     assert client.patch(f"{USERS}/{user.id}", json={"full_name": " "}, headers=csrf(client)).status_code == 422
+
+
+def test_taken_email_is_a_conflict_even_when_the_same_edit_disables_the_user(client: TestClient, db: Session, admin: User) -> None:
+    # Revoking sessions on disable used to autoflush the duplicate email outside the try and answer 500.
+    user = add_user(db, "mine@example.ae")
+    add_user(db, "taken@example.ae")
+
+    response = client.patch(f"{USERS}/{user.id}", json={"email": "taken@example.ae", "status": "disabled"}, headers=csrf(client))
+
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "email_taken"
 
 
 def test_admin_changes_an_entity_role(client: TestClient, db: Session, admin: User) -> None:

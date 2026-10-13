@@ -60,7 +60,7 @@ def list_users(
     q: Annotated[str | None, Query(max_length=320, description="Matches email or name")] = None,
     role: EffectiveRole | None = None,
     user_status: Annotated[UserStatus | None, Query(alias="status")] = None,
-    page: Annotated[int, Query(ge=1)] = 1,
+    page: Annotated[int, Query(ge=1, le=100_000)] = 1,  # bounded so OFFSET can never overflow
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> UserPage:
     conditions = []
@@ -109,18 +109,19 @@ def update_user(user_id: uuid.UUID, body: AdminUserUpdate, admin: PlatformAdmin,
     if not changes:
         return to_admin_user_outs(db, [user])[0]
 
-    if "status" in changes and user.status == UserStatus.DISABLED:  # don't let old sessions revive on re-enable
-        db.execute(
-            update(UserSession)
-            .where(UserSession.user_id == user.id, UserSession.revoked_at.is_(None))
-            .values(revoked_at=func.now())
-        )
     record_audit(db, admin, "user.updated", "user", user.id, {"changes": changes})
     try:
         db.flush()
     except IntegrityError as exc:
         db.rollback()
         raise ApiError(409, "email_taken", "An account with this email already exists.") from exc
+    # After the flush, so a taken email surfaces above as 409 instead of failing inside this statement's autoflush.
+    if "status" in changes and user.status == UserStatus.DISABLED:  # don't let old sessions revive on re-enable
+        db.execute(
+            update(UserSession)
+            .where(UserSession.user_id == user.id, UserSession.revoked_at.is_(None))
+            .values(revoked_at=func.now())
+        )
     db.commit()
     return to_admin_user_outs(db, [user])[0]
 
