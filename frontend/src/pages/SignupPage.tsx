@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/auth-context'
-import { FormAlert, SubmitButton, TextField } from '../components/TextField'
+import { FormAlert, TextField, Button } from '../components/ui'
 import { errorMessage, serverFieldErrors } from '../lib/api'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, validateSignup, type FieldErrors } from '../lib/validation'
@@ -42,7 +42,7 @@ export function SignupPage() {
 
   return (
     <section className="mx-auto w-full max-w-md">
-      <h1 className="mb-6 text-2xl font-semibold text-slate-900">Create an account</h1>
+      <h1 className="mb-6">Create an account</h1>
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormAlert message={alert} />
         <TextField label="Full name" autoComplete="name" maxLength={120} required
@@ -53,10 +53,10 @@ export function SignupPage() {
           minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH}
           hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
           value={form.password} onChange={update('password')} error={errors.password} />
-        <SubmitButton busy={busy}>Sign up</SubmitButton>
+        <Button type="submit" loading={busy}>Sign up</Button>
       </form>
-      <p className="mt-4 text-sm text-slate-600">
-        Already have an account? <Link className="text-emerald-800 underline" to="/login">Log in</Link>
+      <p className="mt-4 text-sm text-ink-600">
+        Already have an account? <Link className="text-brand-800 underline" to="/login">Log in</Link>
       </p>
     </section>
   )
