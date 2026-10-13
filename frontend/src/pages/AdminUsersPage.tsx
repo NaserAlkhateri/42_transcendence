@@ -80,7 +80,7 @@ export function AdminUsersPage() {
 
       <FormAlert message={loadError} />
 
-      <Table<AdminUser> caption="Users matching the current filters" rows={data?.items ?? []} rowKey={item=>item.id} emptyMessage={data ? 'No users match these filters.' : 'Loading users…'} columns={[
+      <Table<AdminUser> caption="Users matching the current filters" rows={data?.items ?? []} rowKey={item=>item.id} emptyMessage={data ? 'No users match these filters.' : loadError ? 'Users could not be loaded.' : 'Loading users…'} columns={[
         {key:'name',header:'Name',render:item=>item.full_name},
         {key:'email',header:'Email',render:item=>item.email},
         {key:'role',header:'Role',render:item=>ROLE_LABELS[item.effective_role]},

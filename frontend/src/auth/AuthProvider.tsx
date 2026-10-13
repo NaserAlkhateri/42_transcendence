@@ -1,18 +1,21 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { http, setUnauthorizedHandler } from '../lib/api'
 import { AuthContext, type AuthState, type User } from './auth-context'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState<User | null | undefined>(undefined)
   const [sessionExpired, setSessionExpired] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
-    // 401 simply means "signed out"; any other failure also leaves the visitor signed out.
+    // /auth/session answers 200 with user=null for guests, so a signed-out visit logs no console error.
+    // Any failure also leaves the visitor signed out.
     http
-      .get<User>('/me', { silent401: true, signal: controller.signal })
-      .then(setUser)
+      .get<{ user: User | null }>('/auth/session', { silent401: true, signal: controller.signal })
+      .then((session) => setUser(session.user))
       .catch(() => {
         if (!controller.signal.aborted) setUser(null)
       })
@@ -45,13 +48,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return signedIn
   }, [])
 
+  // Only forget the user once the server has revoked the session: the HttpOnly cookie would otherwise
+  // still sign them back in on reload. Failures reach the caller, which tells the user.
+  // Go home in the same render as the sign-out: a guarded page left on screen would remember itself
+  // as the "return to" target for whoever logs in next. The router applies navigation in a transition,
+  // so the sign-out joins that transition instead of rendering first on the old page.
   const logout = useCallback(async () => {
-    try {
-      await http.post<void>('/auth/logout', undefined, { silent401: true })
-    } finally {
+    await http.post<void>('/auth/logout', undefined, { silent401: true })
+    startTransition(() => {
+      navigate('/', { replace: true })
       setUser(null)
-    }
-  }, [])
+    })
+  }, [navigate])
 
   const dismissSessionExpired = useCallback(() => setSessionExpired(false), [])
 

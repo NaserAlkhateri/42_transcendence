@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../auth/auth-context'
 import { Alert, Button, Icon, IconButton, buttonClass } from '../components/ui'
+import { errorMessage } from '../lib/api'
 import { navItemsFor } from '../lib/roles'
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -33,6 +34,16 @@ function Header() {
   const location = useLocation()
   const menuId = useId()
   const [open, setOpen] = useState(false)
+  const [logoutError, setLogoutError] = useState<string>()
+
+  async function onLogout() {
+    try {
+      await logout()
+      setLogoutError(undefined)
+    } catch (error) {
+      setLogoutError(errorMessage(error))
+    }
+  }
 
   // Close the mobile menu whenever the route changes.
   useEffect(() => setOpen(false), [location.pathname])
@@ -46,7 +57,7 @@ function Header() {
           {item.label}
         </NavLink>
       ))}
-      <Button variant="ghost" icon="logout" onClick={() => void logout()}>
+      <Button variant="ghost" icon="logout" onClick={() => void onLogout()}>
         Log out
       </Button>
     </>
@@ -79,6 +90,11 @@ function Header() {
           </div>
         ) : null}
       </nav>
+      {logoutError ? (
+        <div className="mx-auto max-w-5xl px-4 pb-3">
+          <Alert variant="danger" title="Could not log out" onDismiss={() => setLogoutError(undefined)}>{logoutError}</Alert>
+        </div>
+      ) : null}
     </header>
   )
 }

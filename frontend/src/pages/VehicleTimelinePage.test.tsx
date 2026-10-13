@@ -71,7 +71,7 @@ function stubApi(timeline: (url: URL) => Response) {
   const calls: URL[] = []
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = new URL(String(input), 'http://localhost')
-    if (url.pathname === '/api/v1/me') return json({ error: { code: 'not_authenticated', message: 'Sign in.' } }, 401)
+    if (url.pathname === '/api/v1/auth/session') return json({ user: null })
     if (url.pathname.startsWith('/api/v1/vehicles/')) {
       calls.push(url)
       return timeline(url)
