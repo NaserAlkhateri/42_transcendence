@@ -13,5 +13,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    setupFiles: ['./src/test-setup.ts'],
+    // Whole-app page tests wait up to 5 s per element (test-setup.ts); give the test itself room above that.
+    testTimeout: 15_000,
   },
 })

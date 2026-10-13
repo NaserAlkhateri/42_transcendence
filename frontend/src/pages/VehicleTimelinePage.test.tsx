@@ -19,6 +19,7 @@ interface TimelineBody {
     organization_name: string
     is_mileage_flagged: boolean
     corrects_record_id: string | null
+    correction_reason: 'odometer' | 'service_date' | 'work_done' | 'category' | 'other' | null
   }[]
 }
 
@@ -30,17 +31,17 @@ const PATROL: TimelineBody = {
     {
       id: '6f1c2c1e-0000-4000-8000-000000000003', service_date: '2026-04-11', created_at: '2026-04-11T08:00:00Z',
       category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 88300,
-      organization_name: 'Falcon Auto Workshop', is_mileage_flagged: true, corrects_record_id: null,
+      organization_name: 'Falcon Auto Workshop', is_mileage_flagged: true, corrects_record_id: null, correction_reason: null,
     },
     {
       id: '6f1c2c1e-0000-4000-8000-000000000002', service_date: '2025-07-21', created_at: '2025-07-21T08:00:00Z',
       category: 'repair', work_codes: ['AC_SERVICE', 'BATTERY_REPLACE'], odometer_km: 121500,
-      organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: null,
+      organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: null, correction_reason: null,
     },
     {
       id: '6f1c2c1e-0000-4000-8000-000000000001', service_date: '2024-06-03', created_at: '2024-06-03T08:00:00Z',
       category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 96000,
-      organization_name: 'Oasis Line Motors', is_mileage_flagged: false, corrects_record_id: null,
+      organization_name: 'Oasis Line Motors', is_mileage_flagged: false, corrects_record_id: null, correction_reason: null,
     },
   ],
 }
@@ -53,12 +54,12 @@ const CAMRY: TimelineBody = {
     {
       id: '7a2d3d2f-0000-4000-8000-000000000002', service_date: '2025-11-05', created_at: '2025-11-06T09:00:00Z',
       category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 45100,
-      organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: ORIGINAL_ID,
+      organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: ORIGINAL_ID, correction_reason: 'odometer',
     },
     {
       id: ORIGINAL_ID, service_date: '2025-11-05', created_at: '2025-11-05T09:00:00Z',
       category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 54000,
-      organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: null,
+      organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: null, correction_reason: null,
     },
   ],
 }
@@ -128,6 +129,19 @@ describe('vehicle timeline page', () => {
     expect(items[0]).toHaveTextContent('Correction')
     expect(within(items[0]).getByRole('link', { name: '5 Nov 2025 record' })).toHaveAttribute('href', `#record-${ORIGINAL_ID}`)
     expect(items[1]).toHaveAttribute('id', `record-${ORIGINAL_ID}`)
+    expect(items[1]).toHaveTextContent('Corrected')
+  })
+
+  it('says what a correction fixed and keeps the original right under it when the dates differ', async () => {
+    // The original was logged with the wrong date (later than the real one): newest-first puts it first.
+    const wrongDate = { ...CAMRY.records[1], id: 'orig-wrong-date', service_date: '2026-02-10' }
+    const fixedDate = { ...CAMRY.records[0], id: 'fix-date', service_date: '2025-11-05', corrects_record_id: 'orig-wrong-date', correction_reason: 'service_date' as const }
+    stubApi(() => json({ ...CAMRY, records: [wrongDate, fixedDate] }))
+    open('/vehicles/JTNBK3EK6N3012345')
+
+    const items = within(await screen.findByRole('list', { name: 'Service history' })).getAllByRole('listitem')
+    expect(items.map((item) => item.id)).toEqual(['record-fix-date', 'record-orig-wrong-date'])
+    expect(items[0]).toHaveTextContent('Reason: Service date')
     expect(items[1]).toHaveTextContent('Corrected')
   })
 

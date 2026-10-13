@@ -1,9 +1,10 @@
+import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Annotated
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
-from app.models import RecordCategory
+from app.models import CorrectionReason, RecordCategory
 from app.schemas.vehicle import TimelineRecord
 from app.services.work_codes import BY_CODE
 
@@ -52,6 +53,12 @@ class RecordSubmission(RecordFields):
     vin: Annotated[str, Field(max_length=40)]  # normalized by the route, which answers invalid_vin
 
 
+class CorrectionSubmission(RecordFields):
+    """The corrected values for an earlier record, and what the correction fixes."""
+
+    correction_reason: CorrectionReason
+
+
 class WorkCodeOut(BaseModel):
     code: str
     label: str
@@ -64,3 +71,4 @@ class OrgRecordOut(TimelineRecord):
     vin: str
     staff_name: str
     notes: str | None
+    corrected_by_id: uuid.UUID | None = None  # set once another record corrects this one

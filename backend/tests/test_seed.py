@@ -51,7 +51,9 @@ def test_seeded_flagged_vehicle_is_served_by_the_timeline(client: TestClient, db
 def test_seeded_correction_points_at_the_mistyped_reading(client: TestClient, db: Session) -> None:
     seed(db, "demo-pass-123")
     records = client.get("/api/v1/vehicles/JTNBK3EK6N3012345/timeline").json()["records"]
-    correction, original = records
+    # Same date and, inside one test transaction, the same created_at: find the pair by its link, not its order.
+    [correction] = [record for record in records if record["corrects_record_id"]]
+    [original] = [record for record in records if record["id"] == correction["corrects_record_id"]]
     assert (correction["odometer_km"], original["odometer_km"]) == (45_100, 54_000)
     assert correction["corrects_record_id"] == original["id"]
 

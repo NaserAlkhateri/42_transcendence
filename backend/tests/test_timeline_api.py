@@ -12,7 +12,7 @@ VIN = "JTDBR32E720123456"
 URL = f"/api/v1/vehicles/{VIN}/timeline"
 SAFE_FIELDS = {
     "id", "service_date", "created_at", "category", "work_codes", "odometer_km",
-    "organization_name", "is_mileage_flagged", "corrects_record_id",
+    "organization_name", "is_mileage_flagged", "corrects_record_id", "correction_reason",
 }
 
 

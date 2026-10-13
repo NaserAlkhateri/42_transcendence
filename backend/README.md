@@ -64,6 +64,18 @@ Active `entity_staff` and `entity_admin` members of an **approved** organization
 - **Event:** after commit the API publishes `record.added` through `app/services/events.py`, with a consumer-safe payload (VIN, record id, date, flag, corrected id). The WebSocket fan-out (BU-04) subscribes there.
 - Errors: 403 `organization_not_approved` / `forbidden`, 422 `invalid_vin` / `validation_error` (unknown or repeated work code, future date, odometer outside 0-2,000,000 km).
 
+## Corrections (AG-04)
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/organizations/{id}/records?vin=` | The organization's own records for a VIN, newest first, with private notes and `corrected_by_id` |
+| POST | `/api/v1/organizations/{id}/records/{record_id}/corrections` | Append a correction: `correction_reason` (`odometer`, `service_date`, `work_done`, `category`, `other`) plus the corrected record fields |
+
+- Only the organization that created a record can correct it (403 `not_your_record`). The original is never changed, and both appear together on the timeline and in the PDF.
+- A record is corrected **once** (a unique database index). To fix a correction, correct the correction. A second attempt gets 409 `already_corrected`.
+- The correction's flag is computed against the history it joins, without the original. Later readings are compared with the corrected value, not the mistake.
+- The public timeline shows `correction_reason` (a fixed list, so no free text or personal data reaches consumers).
+
 ## Tests
 
 Docker must be running: the suite starts a throwaway Postgres 16 container. To use an existing empty database instead, set `TEST_DATABASE_URL`.

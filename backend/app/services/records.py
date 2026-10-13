@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from app.models import Organization, ServiceRecord, User, Vehicle
+from app.models import CorrectionReason, Organization, ServiceRecord, User, Vehicle
 from app.schemas.records import RecordFields
 
 
@@ -61,3 +61,38 @@ def submit_record(db: Session, *, organization: Organization, staff: User, vin: 
     db.add(record)
     db.flush()
     return record
+
+
+class AlreadyCorrectedError(Exception):
+    """The record already has a correction: correct that correction instead."""
+
+
+def submit_correction(
+    db: Session, *, organization: Organization, staff: User, original: ServiceRecord, fields: RecordFields,
+    reason: CorrectionReason,
+) -> ServiceRecord:
+    """Append a correction of `original` (the caller commits and has checked the organization owns it).
+    The flag compares the corrected values with the history the correction joins, without the original."""
+    vehicle = db.scalars(select(Vehicle).where(Vehicle.id == original.vehicle_id).with_for_update()).one()
+    if db.scalar(select(ServiceRecord.id).where(ServiceRecord.corrects_record_id == original.id)) is not None:
+        raise AlreadyCorrectedError
+    history = effective_readings(db, vehicle.id, excluding=original.id)
+    record = ServiceRecord(
+        vehicle_id=vehicle.id,
+        organization_id=organization.id,
+        staff_id=staff.id,
+        organization_name=organization.name,
+        staff_name=staff.full_name,
+        category=fields.category,
+        work_codes=fields.work_codes,
+        odometer_km=fields.odometer_km,
+        service_date=fields.service_date,
+        is_mileage_flagged=reading_is_inconsistent(history, fields.service_date, fields.odometer_km),
+        notes=fields.notes,
+        corrects_record_id=original.id,
+        correction_reason=reason,
+    )
+    db.add(record)
+    db.flush()
+    return record
+

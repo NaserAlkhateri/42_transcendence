@@ -3,7 +3,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models import RecordCategory
+from app.models import CorrectionReason, RecordCategory
 
 
 class VehicleSummary(BaseModel):
@@ -30,6 +30,7 @@ class TimelineRecord(BaseModel):
     organization_name: str
     is_mileage_flagged: bool
     corrects_record_id: uuid.UUID | None
+    correction_reason: CorrectionReason | None  # a fixed list, so it is safe to show publicly
 
 
 class VehicleTimeline(BaseModel):
