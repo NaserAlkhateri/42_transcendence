@@ -17,7 +17,7 @@ it('keeps legacy submit buttons compatible with shared loading states', ()=>{
 // Every view a visitor can land on, including the guard's own Access-denied screen. Palette compliance
 // is checked tree-wide in design-tokens.test.ts, which does not need this list kept up to date.
 it('uses shared ui in every view that renders chrome', ()=>{
- for (const file of ['pages/HomePage.tsx','pages/LoginPage.tsx','pages/SignupPage.tsx','pages/ProfilePage.tsx','pages/AdminUsersPage.tsx','pages/NotFoundPage.tsx','pages/DesignSystemPage.tsx','layouts/AppLayout.tsx','components/ErrorBoundary.tsx','routes/guards.tsx','App.tsx']) {
+ for (const file of ['pages/HomePage.tsx','pages/LoginPage.tsx','pages/SignupPage.tsx','pages/ProfilePage.tsx','pages/AdminUsersPage.tsx','pages/NotFoundPage.tsx','pages/DesignSystemPage.tsx','pages/VehicleTimelinePage.tsx','components/VinSearchForm.tsx','components/WatchVinButton.tsx','layouts/AppLayout.tsx','components/ErrorBoundary.tsx','routes/guards.tsx','App.tsx']) {
   const source=readFileSync(new URL('./'+file, import.meta.url),'utf8')
   expect(source, file).toMatch(/components\/ui|\.\/ui/)
  }
