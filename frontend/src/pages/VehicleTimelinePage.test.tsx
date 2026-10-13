@@ -22,41 +22,42 @@ interface TimelineBody {
   }[]
 }
 
-const MERCEDES: TimelineBody = {
-  vin: 'WDDGF4HB1CA654321',
-  vehicle: { vin: 'WDDGF4HB1CA654321', make: 'Mercedes-Benz', model: 'C 200', model_year: 2018 },
+// Mirrors the seed (backend/app/seed.py): common UAE cars.
+const PATROL: TimelineBody = {
+  vin: 'JN8AY2NY4K9012345',
+  vehicle: { vin: 'JN8AY2NY4K9012345', make: 'Nissan', model: 'Patrol', model_year: 2019 },
   records: [
     {
       id: '6f1c2c1e-0000-4000-8000-000000000003', service_date: '2026-04-11', created_at: '2026-04-11T08:00:00Z',
-      category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 58100,
+      category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 88300,
       organization_name: 'Falcon Auto Workshop', is_mileage_flagged: true, corrects_record_id: null,
     },
     {
-      id: '6f1c2c1e-0000-4000-8000-000000000002', service_date: '2025-09-22', created_at: '2025-09-22T08:00:00Z',
-      category: 'repair', work_codes: ['AC_SERVICE'], odometer_km: 71300,
+      id: '6f1c2c1e-0000-4000-8000-000000000002', service_date: '2025-07-21', created_at: '2025-07-21T08:00:00Z',
+      category: 'repair', work_codes: ['AC_SERVICE', 'BATTERY_REPLACE'], odometer_km: 121500,
       organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: null,
     },
     {
-      id: '6f1c2c1e-0000-4000-8000-000000000001', service_date: '2025-03-01', created_at: '2025-03-01T08:00:00Z',
-      category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 62000,
+      id: '6f1c2c1e-0000-4000-8000-000000000001', service_date: '2024-06-03', created_at: '2024-06-03T08:00:00Z',
+      category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 96000,
       organization_name: 'Oasis Line Motors', is_mileage_flagged: false, corrects_record_id: null,
     },
   ],
 }
 
 const ORIGINAL_ID = '7a2d3d2f-0000-4000-8000-000000000001'
-const HYUNDAI: TimelineBody = {
-  vin: 'KMHD841CBMU112233',
-  vehicle: { vin: 'KMHD841CBMU112233', make: 'Hyundai', model: 'Elantra', model_year: 2021 },
+const CAMRY: TimelineBody = {
+  vin: 'JTNBK3EK6N3012345',
+  vehicle: { vin: 'JTNBK3EK6N3012345', make: 'Toyota', model: 'Camry', model_year: 2022 },
   records: [
     {
       id: '7a2d3d2f-0000-4000-8000-000000000002', service_date: '2025-11-05', created_at: '2025-11-06T09:00:00Z',
-      category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 12100,
+      category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 45100,
       organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: ORIGINAL_ID,
     },
     {
       id: ORIGINAL_ID, service_date: '2025-11-05', created_at: '2025-11-05T09:00:00Z',
-      category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 21000,
+      category: 'maintenance', work_codes: ['OIL_CHANGE'], odometer_km: 54000,
       organization_name: 'Falcon Auto Workshop', is_mileage_flagged: false, corrects_record_id: null,
     },
   ],
@@ -93,26 +94,26 @@ afterEach(() => {
 
 describe('vehicle timeline page', () => {
   it('shows date, mileage, workshop and work done for every record and flags the lower reading', async () => {
-    const calls = stubApi(() => json(MERCEDES))
-    open('/vehicles/WDDGF4HB1CA654321')
+    const calls = stubApi(() => json(PATROL))
+    open('/vehicles/JN8AY2NY4K9012345')
 
-    expect(await screen.findByRole('heading', { level: 1, name: '2018 Mercedes-Benz C 200' })).toBeInTheDocument()
-    expect(calls[0].pathname).toBe('/api/v1/vehicles/WDDGF4HB1CA654321/timeline')
+    expect(await screen.findByRole('heading', { level: 1, name: '2019 Nissan Patrol' })).toBeInTheDocument()
+    expect(calls[0].pathname).toBe('/api/v1/vehicles/JN8AY2NY4K9012345/timeline')
     expect(calls[0].search).toBe('')
 
     const items = within(screen.getByRole('list', { name: 'Service history' })).getAllByRole('listitem')
     expect(items).toHaveLength(3)
-    for (const text of ['11 Apr 2026', '58,100 km', 'Falcon Auto Workshop', 'Maintenance', 'Oil change', 'Mileage warning']) {
+    for (const text of ['11 Apr 2026', '88,300 km', 'Falcon Auto Workshop', 'Maintenance', 'Oil change', 'Mileage warning']) {
       expect(items[0]).toHaveTextContent(text)
     }
-    for (const text of ['22 Sept 2025', '71,300 km', 'Repair', 'A/C service']) expect(items[1]).toHaveTextContent(text)
+    for (const text of ['21 Jul 2025', '121,500 km', 'Repair', 'A/C service, Battery replacement']) expect(items[1]).toHaveTextContent(text)
     expect(items[1]).not.toHaveTextContent('Mileage warning')
     expect(items[2]).toHaveTextContent('Oasis Line Motors')
   })
 
   it('links a correction to the record it corrects and marks the original as corrected', async () => {
-    stubApi(() => json(HYUNDAI))
-    open('/vehicles/KMHD841CBMU112233')
+    stubApi(() => json(CAMRY))
+    open('/vehicles/JTNBK3EK6N3012345')
 
     const items = within(await screen.findByRole('list', { name: 'Service history' })).getAllByRole('listitem')
     expect(items[0]).toHaveTextContent('Correction')
@@ -122,8 +123,8 @@ describe('vehicle timeline page', () => {
   })
 
   it('sends category, mileage-warning, date and order filters to the API and keeps them in the URL', async () => {
-    const calls = stubApi(() => json(MERCEDES))
-    open('/vehicles/WDDGF4HB1CA654321')
+    const calls = stubApi(() => json(PATROL))
+    open('/vehicles/JN8AY2NY4K9012345')
     await screen.findByRole('list', { name: 'Service history' })
     const last = () => calls[calls.length - 1].searchParams
 
@@ -147,8 +148,8 @@ describe('vehicle timeline page', () => {
   })
 
   it('refuses a date range that ends before it starts without calling the API', async () => {
-    const calls = stubApi(() => json(MERCEDES))
-    open('/vehicles/WDDGF4HB1CA654321?from=2026-01-01')
+    const calls = stubApi(() => json(PATROL))
+    open('/vehicles/JN8AY2NY4K9012345?from=2026-01-01')
     await screen.findByRole('list', { name: 'Service history' })
 
     fireEvent.change(screen.getByLabelText('To'), { target: { value: '2025-01-01' } })
@@ -158,16 +159,16 @@ describe('vehicle timeline page', () => {
   })
 
   it('offers to watch a valid VIN that has no history yet', async () => {
-    stubApi(() => json({ vin: 'JTDBR32E720999999', vehicle: null, records: [] }))
-    open('/vehicles/JTDBR32E720999999')
+    stubApi(() => json({ vin: 'MDHBN7AD0P0012345', vehicle: null, records: [] }))
+    open('/vehicles/MDHBN7AD0P0012345')
 
     expect(await screen.findByRole('heading', { name: 'No service history yet' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Log in to watch this VIN' })).toHaveAttribute('href', '/login')
   })
 
   it('tells filtered-out results apart from an empty history and clears the filters', async () => {
-    const calls = stubApi((url) => json(url.searchParams.has('category') ? { ...MERCEDES, records: [] } : MERCEDES))
-    open('/vehicles/WDDGF4HB1CA654321?category=repair')
+    const calls = stubApi((url) => json(url.searchParams.has('category') ? { ...PATROL, records: [] } : PATROL))
+    open('/vehicles/JN8AY2NY4K9012345?category=repair')
 
     expect(await screen.findByRole('heading', { name: 'No records match these filters' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Log in to watch this VIN' })).toBeNull()
@@ -180,7 +181,7 @@ describe('vehicle timeline page', () => {
   })
 
   it('rejects a malformed VIN in the address without calling the API', async () => {
-    const calls = stubApi(() => json(MERCEDES))
+    const calls = stubApi(() => json(PATROL))
     open('/vehicles/NOT-A-VIN')
 
     expect(await screen.findByText('A VIN has exactly 17 letters or digits and never contains I, O or Q.')).toBeInTheDocument()
@@ -188,17 +189,17 @@ describe('vehicle timeline page', () => {
   })
 
   it('rewrites a lower-case or dashed VIN in the address to its canonical form', async () => {
-    const calls = stubApi(() => json(MERCEDES))
-    open('/vehicles/wddgf4hb1ca-654321')
+    const calls = stubApi(() => json(PATROL))
+    open('/vehicles/jn8ay2ny4k9-012345')
 
     await screen.findByRole('list', { name: 'Service history' })
-    expect(window.location.pathname).toBe('/vehicles/WDDGF4HB1CA654321')
-    expect(calls.every((url) => url.pathname === '/api/v1/vehicles/WDDGF4HB1CA654321/timeline')).toBe(true)
+    expect(window.location.pathname).toBe('/vehicles/JN8AY2NY4K9012345')
+    expect(calls.every((url) => url.pathname === '/api/v1/vehicles/JN8AY2NY4K9012345/timeline')).toBe(true)
   })
 
   it('shows the server error when the lookup fails', async () => {
     stubApi(() => json({ error: { code: 'internal_error', message: 'Something broke on our side.' } }, 500))
-    open('/vehicles/WDDGF4HB1CA654321')
+    open('/vehicles/JN8AY2NY4K9012345')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Something broke on our side.')
   })
@@ -206,22 +207,22 @@ describe('vehicle timeline page', () => {
 
 describe('VIN search on the home page', () => {
   it('normalizes what the visitor typed and opens that vehicle', async () => {
-    const calls = stubApi(() => json(MERCEDES))
+    const calls = stubApi(() => json(PATROL))
     open('/')
 
-    fireEvent.change(await screen.findByLabelText('VIN'), { target: { value: 'wddgf4hb1ca-٦٥٤٣٢١' } })
+    fireEvent.change(await screen.findByLabelText('VIN (chassis number)'), { target: { value: 'jn8ay2ny4k9-٠١٢٣٤٥' } })
     fireEvent.click(screen.getByRole('button', { name: 'Look up' }))
 
-    expect(await screen.findByRole('heading', { level: 1, name: '2018 Mercedes-Benz C 200' })).toBeInTheDocument()
-    expect(window.location.pathname).toBe('/vehicles/WDDGF4HB1CA654321')
-    expect(calls[0].pathname).toBe('/api/v1/vehicles/WDDGF4HB1CA654321/timeline')
+    expect(await screen.findByRole('heading', { level: 1, name: '2019 Nissan Patrol' })).toBeInTheDocument()
+    expect(window.location.pathname).toBe('/vehicles/JN8AY2NY4K9012345')
+    expect(calls[0].pathname).toBe('/api/v1/vehicles/JN8AY2NY4K9012345/timeline')
   })
 
   it('explains an invalid VIN and stays on the page', async () => {
-    const calls = stubApi(() => json(MERCEDES))
+    const calls = stubApi(() => json(PATROL))
     open('/')
 
-    fireEvent.change(await screen.findByLabelText('VIN'), { target: { value: 'ABC123' } })
+    fireEvent.change(await screen.findByLabelText('VIN (chassis number)'), { target: { value: 'ABC123' } })
     fireEvent.click(screen.getByRole('button', { name: 'Look up' }))
 
     expect(await screen.findByText('A VIN has exactly 17 letters or digits and never contains I, O or Q.')).toBeInTheDocument()

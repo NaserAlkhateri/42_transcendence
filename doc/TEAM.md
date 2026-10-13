@@ -99,7 +99,7 @@ Board: https://trello.com/b/6Pob02M6/transcendence (Transcendence workspace). Co
 
 Each card has one owner, an estimate and a target week. No more than two cards in progress per person. Re-estimate and rebalance every 3-4 days. Naser prioritizes features; Burhan resolves architecture questions; Agegnew facilitates delivery; Hassan coordinates QA. No one self-approves their own pull request. Push work-in-progress branches early so the Git history shows every member's contributions.
 
-A task is **Done** only when: requirements met, API/UI integrated as needed, tests passing, permissions checked, no browser-console errors, every item on its subject checklist ticked (for module cards), reviewer approved and relevant documentation updated. Unfinished modules earn zero points in the subject.
+A task is **Done** only when: requirements met, API/UI integrated as needed, tests passing, permissions checked, no browser-console errors, every item on its subject checklist ticked (for module cards), reviewer approved and relevant documentation updated. UI text, formats and demo data follow [`UAE_MARKET.md`](UAE_MARKET.md). Unfinished modules earn zero points in the subject.
 
 ## Team communication and evaluation
 - Short daily stand-up in Trello or team chat; planning/review at least weekly.

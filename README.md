@@ -19,11 +19,12 @@ Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for t
 - Partner API with admin-issued, read-only keys and rate limiting
 - English and Arabic with full right-to-left layout mirroring
 
-## Read these four files first (contributors)
+## Read these five files first (contributors)
 1. `README.md` - 42 compliance, module points, starting instructions and project conventions.
 2. [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md) - Stack, services, database, security and deployment contracts.
 3. [`doc/FEATURES.md`](doc/FEATURES.md) - Product requirements, roles, flows and acceptance checks.
 4. [`doc/TEAM.md`](doc/TEAM.md) - Roles, equally estimated Trello work and three-week delivery gates.
+5. [`doc/UAE_MARKET.md`](doc/UAE_MARKET.md) - UAE market rules for UI wording, formats, theme and demo data. Read it before any frontend work.
 
 **Build rule:** Implement the mandatory app and a demonstrable **14 module points** first. Do not claim partial modules. Add tests and documentation as you implement; do not silently alter immutable-history or privacy requirements. Reconcile changes with the PO, PM and Tech Lead.
 

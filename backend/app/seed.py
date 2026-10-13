@@ -71,31 +71,35 @@ ORGANIZATIONS = [
     OrgSpec("DEMO-WS-003", "Sand Dune Garage", OrganizationKind.WORKSHOP, OrganizationStatus.PENDING, "Sharjah"),
 ]
 
+# Fictional people with names typical of the UAE's mixed workforce. Display names only; emails stay role-based.
 USERS = [
     UserSpec("admin", "Platform Admin", UserRole.PLATFORM_ADMIN),
-    UserSpec("consumer", "Demo Consumer", UserRole.CONSUMER),
-    UserSpec("falcon.admin", "Falcon Bay Admin", UserRole.CONSUMER, "DEMO-WS-001", MemberRole.ENTITY_ADMIN),
-    UserSpec("falcon.staff", "Falcon Bay Technician", UserRole.CONSUMER, "DEMO-WS-001", MemberRole.ENTITY_STAFF),
-    UserSpec("oasis.admin", "Oasis Line Admin", UserRole.CONSUMER, "DEMO-DL-002", MemberRole.ENTITY_ADMIN),
-    UserSpec("oasis.staff", "Oasis Line Service Advisor", UserRole.CONSUMER, "DEMO-DL-002", MemberRole.ENTITY_STAFF),
-    UserSpec("sanddune.admin", "Sand Dune Admin", UserRole.CONSUMER, "DEMO-WS-003", MemberRole.ENTITY_ADMIN),
+    UserSpec("consumer", "Mariam Al Hashimi", UserRole.CONSUMER),
+    UserSpec("falcon.admin", "Khalid Al Mansoori", UserRole.CONSUMER, "DEMO-WS-001", MemberRole.ENTITY_ADMIN),
+    UserSpec("falcon.staff", "Arjun Nair", UserRole.CONSUMER, "DEMO-WS-001", MemberRole.ENTITY_STAFF),
+    UserSpec("oasis.admin", "Fatima Al Zaabi", UserRole.CONSUMER, "DEMO-DL-002", MemberRole.ENTITY_ADMIN),
+    UserSpec("oasis.staff", "Joseph Santos", UserRole.CONSUMER, "DEMO-DL-002", MemberRole.ENTITY_STAFF),
+    UserSpec("sanddune.admin", "Omar Haddad", UserRole.CONSUMER, "DEMO-WS-003", MemberRole.ENTITY_ADMIN),
 ]
 
+# Among the most common cars on UAE roads, with GCC-market VIN prefixes (JTM/JTN Toyota Japan, JN8 Nissan Japan).
+# Work codes follow the local climate: A/C, batteries and tyres wear fast in the heat, air filters in the dust.
+# MDHBN7AD0P0012345 (2023 Nissan Sunny) is deliberately not seeded: it is the demo VIN for the "Watch" flow.
 VEHICLES = [
-    VehicleSpec("JTDBR32E720123456", "Toyota", "Corolla", 2019, [  # clean history
-        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE", "FILTER_REPLACE"], 15_200, date(2025, 2, 10)),
-        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE", "TIRE_ROTATION"], 30_450, date(2025, 8, 14)),
-        RecordSpec("DEMO-DL-002", "oasis.staff", RecordCategory.REPAIR, ["BRAKE_PADS"], 41_900, date(2026, 2, 3)),
+    VehicleSpec("JTMHX01J5M4012345", "Toyota", "Land Cruiser", 2021, [  # clean history
+        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE", "AIR_FILTER"], 18_400, date(2024, 3, 12)),
+        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["AC_SERVICE", "BATTERY_REPLACE"], 41_200, date(2024, 12, 2)),
+        RecordSpec("DEMO-DL-002", "oasis.staff", RecordCategory.REPAIR, ["TYRE_REPLACE"], 63_900, date(2025, 9, 18)),
     ]),
-    VehicleSpec("WDDGF4HB1CA654321", "Mercedes-Benz", "C 200", 2018, [  # mileage went down: accepted and flagged
-        RecordSpec("DEMO-DL-002", "oasis.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE"], 62_000, date(2025, 3, 1)),
-        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.REPAIR, ["AC_SERVICE"], 71_300, date(2025, 9, 22)),
-        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE"], 58_100, date(2026, 4, 11), flagged=True),
+    VehicleSpec("JN8AY2NY4K9012345", "Nissan", "Patrol", 2019, [  # mileage went down: accepted and flagged
+        RecordSpec("DEMO-DL-002", "oasis.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE"], 96_000, date(2024, 6, 3)),
+        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.REPAIR, ["AC_SERVICE"], 121_500, date(2025, 7, 21)),
+        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE"], 88_300, date(2026, 4, 11), flagged=True),
     ]),
-    VehicleSpec("KMHD841CBMU112233", "Hyundai", "Elantra", 2021, [  # mistyped reading, then a linked correction
-        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE"], 21_000, date(2025, 11, 5)),
+    VehicleSpec("JTNBK3EK6N3012345", "Toyota", "Camry", 2022, [  # mistyped reading, then a linked correction
+        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE"], 54_000, date(2025, 11, 5)),
         # The correction replaces the original reading, so there is no earlier effective reading to compare: not flagged.
-        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE"], 12_100, date(2025, 11, 5), corrects=0),
+        RecordSpec("DEMO-WS-001", "falcon.staff", RecordCategory.MAINTENANCE, ["OIL_CHANGE"], 45_100, date(2025, 11, 5), corrects=0),
     ]),
 ]
 
