@@ -17,6 +17,7 @@ const SignupPage = lazy(() => import('./pages/SignupPage').then((m) => ({ defaul
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })))
 const VehicleTimelinePage = lazy(() => import('./pages/VehicleTimelinePage').then((m) => ({ default: m.VehicleTimelinePage })))
+const NewRecordPage = lazy(() => import('./pages/workshop/NewRecordPage').then((m) => ({ default: m.NewRecordPage })))
 
 export function App() {
   return (
@@ -54,6 +55,10 @@ function AppRoutes() {
             <Route path="login" element={<Lazy><RequireGuest><LoginPage /></RequireGuest></Lazy>} />
             <Route path="signup" element={<Lazy><RequireGuest><SignupPage /></RequireGuest></Lazy>} />
             <Route path="profile" element={<Lazy><RequireAuth>{user ? <ProfilePage user={user} /> : null}</RequireAuth></Lazy>} />
+            <Route
+              path="workshop/records/new"
+              element={<Lazy><RequireRole roles={['entity_admin', 'entity_staff']}><NewRecordPage /></RequireRole></Lazy>}
+            />
             <Route
               path="admin/users"
               element={<Lazy><RequireRole roles={['platform_admin']}><AdminUsersPage /></RequireRole></Lazy>}

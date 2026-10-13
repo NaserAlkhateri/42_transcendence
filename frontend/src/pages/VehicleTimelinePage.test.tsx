@@ -63,6 +63,13 @@ const CAMRY: TimelineBody = {
   ],
 }
 
+// GET /api/v1/work-codes: labels come from the backend's predefined list.
+const WORK_CODES = [
+  { code: 'OIL_CHANGE', label: 'Oil change', label_ar: 'تغيير الزيت' },
+  { code: 'AC_SERVICE', label: 'A/C service', label_ar: 'صيانة المكيف' },
+  { code: 'BATTERY_REPLACE', label: 'Battery replacement', label_ar: 'تبديل البطارية' },
+]
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
@@ -73,6 +80,7 @@ function stubApi(timeline: (url: URL) => Response) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const url = new URL(String(input), 'http://localhost')
     if (url.pathname === '/api/v1/auth/session') return json({ user: null })
+    if (url.pathname === '/api/v1/work-codes') return json(WORK_CODES)
     if (url.pathname.startsWith('/api/v1/vehicles/')) {
       calls.push(url)
       return timeline(url)
@@ -106,7 +114,8 @@ describe('vehicle timeline page', () => {
     for (const text of ['11 Apr 2026', '88,300 km', 'Falcon Auto Workshop', 'Maintenance', 'Oil change', 'Mileage warning']) {
       expect(items[0]).toHaveTextContent(text)
     }
-    for (const text of ['21 Jul 2025', '121,500 km', 'Repair', 'A/C service, Battery replacement']) expect(items[1]).toHaveTextContent(text)
+    expect(await within(items[1]).findByText('A/C service, Battery replacement')).toBeInTheDocument() // labels load from the API
+    for (const text of ['21 Jul 2025', '121,500 km', 'Repair']) expect(items[1]).toHaveTextContent(text)
     expect(items[1]).not.toHaveTextContent('Mileage warning')
     expect(items[2]).toHaveTextContent('Oasis Line Motors')
   })

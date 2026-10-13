@@ -50,6 +50,20 @@ Guards in `app.auth.permissions`, used on every protected route:
 
 Admins cannot demote, disable or delete themselves, so at least one admin always remains. Every edit and delete writes an `audit_events` row.
 
+## Service records (AG-03)
+
+Active `entity_staff` and `entity_admin` members of an **approved** organization append records. Consumers and platform admins cannot write history. Records are permanent: a mistake is fixed with a correction (AG-04).
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/work-codes` | Predefined work codes with English and Arabic labels (public) |
+| POST | `/api/v1/organizations/{id}/records` | Append a record: `vin`, `service_date`, `category`, `work_codes`, `odometer_km`, optional private `notes` |
+
+- One transaction per submission. It creates the vehicle on its first record and locks the vehicle row (`SELECT ... FOR UPDATE`). It then compares the reading with the effective history and inserts the record with its flag. Concurrent submissions for one VIN are serialized, so each flag is computed against everything committed before it (`tests/test_records_concurrency.py`).
+- **Mileage flag:** a reading is accepted but flagged when it does not fit the effective history. That means it is lower than the highest reading dated on or before it, or higher than a reading dated after it (a back-dated entry). Records replaced by a correction don't count.
+- **Event:** after commit the API publishes `record.added` through `app/services/events.py`, with a consumer-safe payload (VIN, record id, date, flag, corrected id). The WebSocket fan-out (BU-04) subscribes there.
+- Errors: 403 `organization_not_approved` / `forbidden`, 422 `invalid_vin` / `validation_error` (unknown or repeated work code, future date, odometer outside 0-2,000,000 km).
+
 ## Tests
 
 Docker must be running: the suite starts a throwaway Postgres 16 container. To use an existing empty database instead, set `TEST_DATABASE_URL`.

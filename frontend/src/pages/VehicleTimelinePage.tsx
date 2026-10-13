@@ -12,13 +12,13 @@ import {
   filtersToParams,
   formatOdometer,
   formatServiceDate,
-  workCodeLabel,
   type TimelineFilters,
   type TimelineRecord,
   type VehicleTimeline,
 } from '../lib/timeline'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { parseVin } from '../lib/vin'
+import { useWorkCodes } from '../lib/workCodes'
 
 /** /vehicles/:vin — public, consumer-safe service history for one VIN. */
 export function VehicleTimelinePage() {
@@ -132,6 +132,7 @@ function Timeline({ vin }: { vin: string }) {
 }
 
 function RecordList({ records }: { records: TimelineRecord[] }) {
+  const { label } = useWorkCodes()
   const byId = new Map(records.map((record) => [record.id, record]))
   const corrected = new Set(records.map((record) => record.corrects_record_id).filter(Boolean))
 
@@ -165,7 +166,7 @@ function RecordList({ records }: { records: TimelineRecord[] }) {
                 </div>
                 <div>
                   <dt className="text-ink-500">Work done</dt>
-                  <dd className="text-ink-800">{record.work_codes.map(workCodeLabel).join(', ')}</dd>
+                  <dd className="text-ink-800">{record.work_codes.map(label).join(', ')}</dd>
                 </div>
               </dl>
 
