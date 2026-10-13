@@ -2,6 +2,7 @@
 
 export type RecordCategory = 'maintenance' | 'repair'
 export type TimelineOrder = 'asc' | 'desc'
+export type CorrectionReason = 'odometer' | 'service_date' | 'work_done' | 'category' | 'other'
 
 export interface VehicleSummary {
   vin: string
@@ -20,6 +21,8 @@ export interface TimelineRecord {
   organization_name: string
   is_mileage_flagged: boolean
   corrects_record_id: string | null
+  /** What a correction fixed (null on records that are not corrections). */
+  correction_reason: CorrectionReason | null
 }
 
 export interface VehicleTimeline {
@@ -30,6 +33,29 @@ export interface VehicleTimeline {
 }
 
 export const CATEGORY_LABELS: Record<RecordCategory, string> = { maintenance: 'Maintenance', repair: 'Repair' }
+
+export const CORRECTION_REASON_LABELS: Record<CorrectionReason, string> = {
+  odometer: 'Odometer reading',
+  service_date: 'Service date',
+  work_done: 'Work done',
+  category: 'Category',
+  other: 'Other',
+}
+
+/** Keep each corrected original directly under the correction that replaces it (a chain stacks newest fix
+ *  first), so the pair reads together whatever their dates. Everything else keeps the API's order. */
+export function orderWithCorrections(records: TimelineRecord[]): TimelineRecord[] {
+  const byId = new Map(records.map((record) => [record.id, record]))
+  const correctedHere = new Set(records.map((record) => record.corrects_record_id).filter((id) => id && byId.has(id)))
+  const ordered: TimelineRecord[] = []
+  const place = (record: TimelineRecord) => {
+    ordered.push(record)
+    const original = record.corrects_record_id ? byId.get(record.corrects_record_id) : undefined
+    if (original) place(original)
+  }
+  for (const record of records) if (!correctedHere.has(record.id)) place(record)
+  return ordered
+}
 
 /** The page URL and the API share these query parameters, so a filtered timeline can be bookmarked or shared. */
 export interface TimelineFilters {

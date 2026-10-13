@@ -18,6 +18,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ defa
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })))
 const VehicleTimelinePage = lazy(() => import('./pages/VehicleTimelinePage').then((m) => ({ default: m.VehicleTimelinePage })))
 const NewRecordPage = lazy(() => import('./pages/workshop/NewRecordPage').then((m) => ({ default: m.NewRecordPage })))
+const CorrectRecordPage = lazy(() => import('./pages/workshop/CorrectRecordPage').then((m) => ({ default: m.CorrectRecordPage })))
 
 export function App() {
   return (
@@ -58,6 +59,10 @@ function AppRoutes() {
             <Route
               path="workshop/records/new"
               element={<Lazy><RequireRole roles={['entity_admin', 'entity_staff']}><NewRecordPage /></RequireRole></Lazy>}
+            />
+            <Route
+              path="workshop/corrections"
+              element={<Lazy><RequireRole roles={['entity_admin', 'entity_staff']}><CorrectRecordPage /></RequireRole></Lazy>}
             />
             <Route
               path="admin/users"

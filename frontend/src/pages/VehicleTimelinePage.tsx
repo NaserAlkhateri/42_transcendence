@@ -7,11 +7,13 @@ import { Alert, Badge, Button, Card, Checkbox, EmptyState, Select, Spinner, Text
 import { errorMessage, http } from '../lib/api'
 import {
   CATEGORY_LABELS,
+  CORRECTION_REASON_LABELS,
   describeVehicle,
   filtersFromParams,
   filtersToParams,
   formatOdometer,
   formatServiceDate,
+  orderWithCorrections,
   type TimelineFilters,
   type TimelineRecord,
   type VehicleTimeline,
@@ -138,7 +140,7 @@ function RecordList({ records }: { records: TimelineRecord[] }) {
 
   return (
     <ol aria-label="Service history" className="flex flex-col gap-4">
-      {records.map((record) => {
+      {orderWithCorrections(records).map((record) => {
         const original = record.corrects_record_id ? byId.get(record.corrects_record_id) : undefined
         return (
           <li key={record.id} id={`record-${record.id}`} className="scroll-mt-6">
@@ -178,10 +180,11 @@ function RecordList({ records }: { records: TimelineRecord[] }) {
               {record.corrects_record_id ? (
                 <p className="mt-3 text-sm text-ink-600">
                   {original ? (
-                    <>Corrects the <a href={`#record-${original.id}`} className="font-medium text-brand-700 underline">{formatServiceDate(original.service_date)} record</a>.</>
+                    <>Corrects the <a href={`#record-${original.id}`} className="font-medium text-brand-700 underline">{formatServiceDate(original.service_date)} record</a> below.</>
                   ) : (
                     'Corrects an earlier record that the current filters hide.'
                   )}
+                  {record.correction_reason ? <> Reason: {CORRECTION_REASON_LABELS[record.correction_reason]}.</> : null}
                 </p>
               ) : null}
             </Card>

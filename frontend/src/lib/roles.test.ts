@@ -42,7 +42,13 @@ describe('navItemsFor', () => {
 describe('record tools in the navigation', () => {
   it('are offered to entity admins and staff only', () => {
     const labels = (role: EffectiveRole) => navItemsFor(user(role)).map((item) => item.label)
-    for (const role of ['entity_admin', 'entity_staff'] as const) expect(labels(role)).toContain('Add record')
-    for (const role of ['consumer', 'platform_admin'] as const) expect(labels(role)).not.toContain('Add record')
+    for (const role of ['entity_admin', 'entity_staff'] as const) {
+      expect(labels(role)).toContain('Add record')
+      expect(labels(role)).toContain('Correct a record')
+    }
+    for (const role of ['consumer', 'platform_admin'] as const) {
+      expect(labels(role)).not.toContain('Add record')
+      expect(labels(role)).not.toContain('Correct a record')
+    }
   })
 })
