@@ -121,6 +121,15 @@ describe('vehicle timeline page', () => {
     expect(items[2]).toHaveTextContent('Oasis Line Motors')
   })
 
+  it('offers the full history as a bilingual PDF download', async () => {
+    stubApi(() => json(PATROL))
+    open('/vehicles/JN8AY2NY4K9012345?category=repair')
+
+    const link = await screen.findByRole('link', { name: /Download report \(PDF\)/ })
+    expect(link).toHaveAttribute('href', '/api/v1/vehicles/JN8AY2NY4K9012345/report.pdf') // filters don't apply
+    expect(link).toHaveAttribute('download')
+  })
+
   it('links a correction to the record it corrects and marks the original as corrected', async () => {
     stubApi(() => json(CAMRY))
     open('/vehicles/JTNBK3EK6N3012345')
@@ -187,6 +196,7 @@ describe('vehicle timeline page', () => {
 
     expect(await screen.findByRole('heading', { name: 'No service history yet' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Log in to watch this VIN' })).toHaveAttribute('href', '/login')
+    expect(screen.queryByRole('link', { name: /Download report/ })).toBeNull() // nothing to report yet
   })
 
   it('tells filtered-out results apart from an empty history and clears the filters', async () => {
