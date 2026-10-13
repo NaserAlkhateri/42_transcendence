@@ -28,7 +28,7 @@ def test_seed_creates_the_demo_world(db: Session) -> None:
     assert pending == ["Sand Dune Garage"]
 
     flagged = db.scalars(select(ServiceRecord).where(ServiceRecord.is_mileage_flagged)).all()
-    assert [record.odometer_km for record in flagged] == [58_100]
+    assert [record.odometer_km for record in flagged] == [88_300]
 
     corrections = db.scalars(select(ServiceRecord).where(ServiceRecord.corrects_record_id.is_not(None))).all()
     assert len(corrections) == 1
@@ -43,8 +43,22 @@ def test_seed_is_idempotent(db: Session) -> None:
 
 def test_seeded_flagged_vehicle_is_served_by_the_timeline(client: TestClient, db: Session) -> None:
     seed(db, "demo-pass-123")
-    body = client.get("/api/v1/vehicles/WDDGF4HB1CA654321/timeline").json()
+    body = client.get("/api/v1/vehicles/JN8AY2NY4K9012345/timeline").json()
+    assert body["vehicle"] == {"vin": "JN8AY2NY4K9012345", "make": "Nissan", "model": "Patrol", "model_year": 2019}
     assert [record["is_mileage_flagged"] for record in body["records"]] == [True, False, False]
+
+
+def test_seeded_correction_points_at_the_mistyped_reading(client: TestClient, db: Session) -> None:
+    seed(db, "demo-pass-123")
+    records = client.get("/api/v1/vehicles/JTNBK3EK6N3012345/timeline").json()["records"]
+    correction, original = records
+    assert (correction["odometer_km"], original["odometer_km"]) == (45_100, 54_000)
+    assert correction["corrects_record_id"] == original["id"]
+
+
+def test_demo_vin_for_the_watch_flow_has_no_history(client: TestClient, db: Session) -> None:
+    seed(db, "demo-pass-123")
+    assert client.get("/api/v1/vehicles/MDHBN7AD0P0012345/timeline").json()["vehicle"] is None
 
 
 def test_cli_refuses_to_run_without_demo_password(monkeypatch, capsys) -> None:

@@ -73,8 +73,8 @@ The seed is safe to run on every start. All data is fictional. Every demo accoun
 | --- | --- |
 | `admin@sijil.demo` | Platform admin |
 | `consumer@sijil.demo` | Consumer |
-| `falcon.admin@sijil.demo` / `falcon.staff@sijil.demo` | Falcon Bay Auto Care (approved workshop) admin / staff |
-| `oasis.admin@sijil.demo` / `oasis.staff@sijil.demo` | Oasis Line Motors (approved dealership) admin / staff |
-| `sanddune.admin@sijil.demo` | Sand Dune Garage (pending, cannot submit) admin |
+| `falcon.admin@sijil.demo` / `falcon.staff@sijil.demo` | Falcon Bay Auto Care (approved workshop, Dubai) admin / staff |
+| `oasis.admin@sijil.demo` / `oasis.staff@sijil.demo` | Oasis Line Motors (approved dealership, Abu Dhabi) admin / staff |
+| `sanddune.admin@sijil.demo` | Sand Dune Garage (pending, Sharjah, cannot submit) admin |
 
-Demo VINs: `JTDBR32E720123456` (clean history), `WDDGF4HB1CA654321` (flagged mileage drop), `KMHD841CBMU112233` (correction). `WVWZZZ1KZ6W000001` has no history (try "Watch").
+Demo VINs (common UAE cars): `JTMHX01J5M4012345` 2021 Toyota Land Cruiser (clean history), `JN8AY2NY4K9012345` 2019 Nissan Patrol (flagged mileage drop), `JTNBK3EK6N3012345` 2022 Toyota Camry (correction). `MDHBN7AD0P0012345` (2023 Nissan Sunny) has no history (try "Watch").
