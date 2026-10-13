@@ -66,24 +66,6 @@ export function filtersToParams(filters: TimelineFilters): URLSearchParams {
   return params
 }
 
-// Until AG-03 serves the predefined work-code list, known codes get a label and others are made readable.
-// UK spelling, as used in the UAE (doc/UAE_MARKET.md).
-const WORK_CODE_LABELS: Record<string, string> = {
-  OIL_CHANGE: 'Oil change',
-  AIR_FILTER: 'Air filter',
-  AC_SERVICE: 'A/C service',
-  BATTERY_REPLACE: 'Battery replacement',
-  TYRE_REPLACE: 'Tyre replacement',
-  BRAKE_PADS: 'Brake pads',
-}
-
-export function workCodeLabel(code: string): string {
-  const known = WORK_CODE_LABELS[code]
-  if (known) return known
-  const words = code.toLowerCase().replace(/_/g, ' ')
-  return words.charAt(0).toUpperCase() + words.slice(1)
-}
-
 export function describeVehicle(vehicle: VehicleSummary | null): string | undefined {
   if (!vehicle) return undefined
   return [vehicle.model_year, vehicle.make, vehicle.model].filter(Boolean).join(' ') || undefined

@@ -24,6 +24,7 @@ export interface NavItem {
 export function navItemsFor(user: User | null | undefined): NavItem[] {
   if (!user) return []
   const items: NavItem[] = [{ to: '/profile', label: 'Profile' }]
+  if (hasRole(user, ['entity_admin', 'entity_staff'])) items.push({ to: '/workshop/records/new', label: 'Add record' })
   if (hasRole(user, ['platform_admin'])) items.push({ to: '/admin/users', label: 'Users' })
   return items
 }
