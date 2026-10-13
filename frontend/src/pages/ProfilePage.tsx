@@ -11,8 +11,10 @@ import {
   validatePasswordChange,
   type FieldErrors,
 } from '../lib/validation'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 export function ProfilePage({ user }: { user: User }) {
+  useDocumentTitle('Your profile')
   return (
     <section className="mx-auto flex w-full max-w-md flex-col gap-10">
       <div>

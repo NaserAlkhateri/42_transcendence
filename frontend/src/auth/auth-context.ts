@@ -33,6 +33,9 @@ export interface AuthState {
   login: (input: { email: string; password: string }) => Promise<User>
   logout: () => Promise<void>
   setUser: (user: User) => void
+  /** True after a signed-in session was ended by the server (401); the shell shows a notice. */
+  sessionExpired: boolean
+  dismissSessionExpired: () => void
 }
 
 export const AuthContext = createContext<AuthState | null>(null)
