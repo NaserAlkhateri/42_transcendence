@@ -1,5 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 
+import { Button } from './ui'
+
 interface Props {
   children: ReactNode
 }
@@ -25,15 +27,13 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!this.state.error) return this.props.children
     return (
       <section role="alert" className="mx-auto max-w-md py-16 text-center">
-        <h1 className="mb-2 text-2xl font-semibold text-slate-900">Something went wrong</h1>
-        <p className="mb-6 text-slate-600">The page hit an unexpected error. Reloading usually fixes it.</p>
-        <button
-          type="button"
+        <h1 className="mb-2">Something went wrong</h1>
+        <p className="mb-6 text-ink-600">The page hit an unexpected error. Reloading usually fixes it.</p>
+        <Button
           onClick={() => window.location.reload()}
-          className="rounded-md bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800"
         >
           Reload page
-        </button>
+        </Button>
       </section>
     )
   }

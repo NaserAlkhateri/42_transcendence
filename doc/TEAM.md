@@ -95,7 +95,7 @@ Each claimed module has a "Subject: ..." checklist on its Trello card, copied fr
 | **3 - Completion** | Module checklists, imports/exports, full notifications, browser tests, concurrency/security tests, policies and README | Full 42 evaluation rehearsal; 16 verified core points first, then stretch modules; code freeze before submission. |
 
 ## Trello workflow and definition of done
-Board: https://trello.com/b/iRrhRK44 (Transcendence workspace). Columns: `Backlog -> To Do -> In Progress -> Review -> Done`, plus a pinned `📌 Info` list. Card IDs: `AG-` Agegnew, `NA-` Naser, `BU-` Burhan, `HA-` Hassan; week-1 cards start in To Do, the rest in Backlog, each due on the Friday of its milestone week. Branch names start with the card ID (for example `AG-02-vin-timeline`) so branches and pull requests can be matched to cards.
+Board: https://trello.com/b/6Pob02M6/transcendence (Transcendence workspace). Columns: `Backlog -> To Do -> In Progress -> Review -> Done`, plus a pinned `📌 Info` list. Card IDs: `AG-` Agegnew, `NA-` Naser, `BU-` Burhan, `HA-` Hassan; week-1 cards start in To Do, the rest in Backlog, each due on the Friday of its milestone week. Branch names start with the card ID (for example `AG-02-vin-timeline`) so branches and pull requests can be matched to cards.
 
 Each card has one owner, an estimate and a target week. No more than two cards in progress per person. Re-estimate and rebalance every 3-4 days. Naser prioritizes features; Burhan resolves architecture questions; Agegnew facilitates delivery; Hassan coordinates QA. No one self-approves their own pull request. Push work-in-progress branches early so the Git history shows every member's contributions.
 

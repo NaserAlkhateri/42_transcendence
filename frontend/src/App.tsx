@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import { AuthProvider } from './auth/AuthProvider'
 import { useAuth } from './auth/auth-context'
+import { Spinner } from './components/ui'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { AppLayout } from './layouts/AppLayout'
 import { HomePage } from './pages/HomePage'
@@ -10,6 +11,7 @@ import { NotFoundPage, PolicyPlaceholderPage } from './pages/NotFoundPage'
 import { RequireAuth, RequireGuest, RequireRole } from './routes/guards'
 
 // Pages behind a sign-in are split into their own chunks so the first load stays small.
+const DesignSystemPage = lazy(() => import('./pages/DesignSystemPage').then(m => ({default: m.DesignSystemPage})))
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })))
 const SignupPage = lazy(() => import('./pages/SignupPage').then((m) => ({ default: m.SignupPage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
@@ -29,9 +31,7 @@ export function App() {
 
 function PageLoading() {
   return (
-    <p role="status" className="text-center text-slate-500">
-      Loading…
-    </p>
+    <div className="flex justify-center text-ink-600"><Spinner label="Loading page" /></div>
   )
 }
 
@@ -48,6 +48,7 @@ function AppRoutes() {
         ) : (
           <>
             <Route index element={<HomePage />} />
+            <Route path="design-system" element={<Lazy><DesignSystemPage /></Lazy>} />
             <Route path="login" element={<Lazy><RequireGuest><LoginPage /></RequireGuest></Lazy>} />
             <Route path="signup" element={<Lazy><RequireGuest><SignupPage /></RequireGuest></Lazy>} />
             <Route path="profile" element={<Lazy><RequireAuth>{user ? <ProfilePage user={user} /> : null}</RequireAuth></Lazy>} />

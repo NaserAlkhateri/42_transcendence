@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 
 import { useAuth, type EffectiveRole } from '../auth/auth-context'
+import { Alert } from '../components/ui'
 import { hasRole } from '../lib/roles'
 import { safeRedirect } from '../lib/redirect'
 
@@ -29,9 +30,9 @@ export function RequireRole({ roles, children }: { roles: readonly EffectiveRole
   if (user.must_change_password) return <Navigate to="/profile" replace />
   if (!hasRole(user, roles)) {
     return (
-      <section className="mx-auto max-w-md text-center">
-        <h1 className="mb-2 text-2xl font-semibold text-slate-900">Access denied</h1>
-        <p className="text-slate-600">Your account does not have permission to view this page.</p>
+      <section className="mx-auto flex max-w-md flex-col gap-4 py-10 text-center">
+        <h1>Access denied</h1>
+        <Alert variant="danger">Your account does not have permission to view this page.</Alert>
       </section>
     )
   }

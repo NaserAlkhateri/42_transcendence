@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 
 import { useAuth, type User } from '../auth/auth-context'
-import { FormAlert, SubmitButton, TextField } from '../components/TextField'
+import { FormAlert, TextField, Button } from '../components/ui'
 import { api, errorMessage, serverFieldErrors } from '../lib/api'
 import { ROLE_LABELS } from '../lib/roles'
 import {
@@ -18,29 +18,29 @@ export function ProfilePage({ user }: { user: User }) {
   return (
     <section className="mx-auto flex w-full max-w-md flex-col gap-10">
       <div>
-        <h1 className="mb-4 text-2xl font-semibold text-slate-900">Your profile</h1>
+        <h1 className="mb-4">Your profile</h1>
         {user.must_change_password ? (
           <FormAlert message="You are using a temporary password. Choose your own password below to continue." />
         ) : null}
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-          <dt className="text-slate-500">Email</dt>
-          <dd className="text-slate-900">{user.email}</dd>
-          <dt className="text-slate-500">Account type</dt>
-          <dd className="text-slate-900">{ROLE_LABELS[user.effective_role]}</dd>
-          <dt className="text-slate-500">Member since</dt>
-          <dd className="text-slate-900">{new Date(user.created_at).toLocaleDateString()}</dd>
+          <dt className="text-ink-500">Email</dt>
+          <dd className="text-ink-900">{user.email}</dd>
+          <dt className="text-ink-500">Account type</dt>
+          <dd className="text-ink-900">{ROLE_LABELS[user.effective_role]}</dd>
+          <dt className="text-ink-500">Member since</dt>
+          <dd className="text-ink-900">{new Date(user.created_at).toLocaleDateString()}</dd>
         </dl>
         {user.memberships.length ? (
           <div className="mt-6">
-            <h2 className="mb-2 text-lg font-semibold text-slate-900">Organizations</h2>
+            <h2 className="mb-2">Organizations</h2>
             <ul className="flex flex-col gap-1 text-sm">
               {user.memberships.map((membership) => (
-                <li key={membership.id} className="text-slate-800">
+                <li key={membership.id} className="text-ink-800">
                   {membership.organization_name} · {ROLE_LABELS[membership.role]}
                   {membership.organization_status !== 'approved' ? (
-                    <span className="text-amber-800"> · organization {membership.organization_status}</span>
+                    <span className="text-warning-700"> · organization {membership.organization_status}</span>
                   ) : null}
-                  {membership.status === 'inactive' ? <span className="text-slate-500"> · inactive</span> : null}
+                  {membership.status === 'inactive' ? <span className="text-ink-500"> · inactive</span> : null}
                 </li>
               ))}
             </ul>
@@ -80,11 +80,11 @@ function NameForm({ user }: { user: User }) {
 
   return (
     <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-slate-900">Details</h2>
+      <h2>Details</h2>
       <TextField label="Full name" autoComplete="name" maxLength={120} required
         value={fullName} onChange={(event) => setFullName(event.target.value)} error={error} />
-      {status ? <p role="status" className="text-sm text-emerald-800">{status}</p> : null}
-      <SubmitButton busy={busy}>Save name</SubmitButton>
+      {status ? <p role="status" className="text-sm text-brand-800">{status}</p> : null}
+      <Button type="submit" loading={busy}>Save name</Button>
     </form>
   )
 }
@@ -129,7 +129,7 @@ function PasswordForm() {
 
   return (
     <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-slate-900">Change password</h2>
+      <h2>Change password</h2>
       <FormAlert message={alert} />
       <TextField label="Current password" type="password" autoComplete="current-password" required
         value={form.current} onChange={update('current')} error={errors.current} />
@@ -139,8 +139,8 @@ function PasswordForm() {
         value={form.next} onChange={update('next')} error={errors.next} />
       <TextField label="Confirm new password" type="password" autoComplete="new-password" required
         value={form.confirm} onChange={update('confirm')} error={errors.confirm} />
-      {status ? <p role="status" className="text-sm text-emerald-800">{status}</p> : null}
-      <SubmitButton busy={busy}>Change password</SubmitButton>
+      {status ? <p role="status" className="text-sm text-brand-800">{status}</p> : null}
+      <Button type="submit" loading={busy}>Change password</Button>
     </form>
   )
 }

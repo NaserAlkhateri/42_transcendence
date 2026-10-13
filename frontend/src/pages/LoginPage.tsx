@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/auth-context'
-import { FormAlert, SubmitButton, TextField } from '../components/TextField'
+import { FormAlert, TextField, Button } from '../components/ui'
 import { errorMessage } from '../lib/api'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { safeRedirect } from '../lib/redirect'
@@ -44,17 +44,17 @@ export function LoginPage() {
 
   return (
     <section className="mx-auto w-full max-w-md">
-      <h1 className="mb-6 text-2xl font-semibold text-slate-900">Log in</h1>
+      <h1 className="mb-6">Log in</h1>
       <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
         <FormAlert message={alert} />
         <TextField label="Email" type="email" autoComplete="email" required
           value={form.email} onChange={update('email')} error={errors.email} />
         <TextField label="Password" type="password" autoComplete="current-password" required
           value={form.password} onChange={update('password')} error={errors.password} />
-        <SubmitButton busy={busy}>Log in</SubmitButton>
+        <Button type="submit" loading={busy}>Log in</Button>
       </form>
-      <p className="mt-4 text-sm text-slate-600">
-        New to Sijil? <Link className="text-emerald-800 underline" to="/signup">Create an account</Link>
+      <p className="mt-4 text-sm text-ink-600">
+        New to Sijil? <Link className="text-brand-800 underline" to="/signup">Create an account</Link>
       </p>
     </section>
   )
