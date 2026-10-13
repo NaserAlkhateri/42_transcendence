@@ -1,16 +1,21 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/auth-context'
 import { FormAlert, SubmitButton, TextField } from '../components/TextField'
 import { errorMessage } from '../lib/api'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { safeRedirect } from '../lib/redirect'
 import { validateLogin, type FieldErrors } from '../lib/validation'
 
 type Field = 'email' | 'password'
 
 export function LoginPage() {
+  useDocumentTitle('Log in')
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const redirectTo = safeRedirect((location.state as { from?: unknown } | null)?.from)
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState<FieldErrors<Field>>({})
   const [alert, setAlert] = useState<string>()
@@ -26,7 +31,7 @@ export function LoginPage() {
     setBusy(true)
     try {
       await login({ email: form.email.trim(), password: form.password })
-      navigate('/profile')
+      navigate(redirectTo, { replace: true })
     } catch (error) {
       setAlert(errorMessage(error))
     } finally {

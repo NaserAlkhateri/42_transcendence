@@ -4,11 +4,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/auth-context'
 import { FormAlert, SubmitButton, TextField } from '../components/TextField'
 import { errorMessage, serverFieldErrors } from '../lib/api'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, validateSignup, type FieldErrors } from '../lib/validation'
 
 type Field = 'email' | 'password' | 'fullName'
 
 export function SignupPage() {
+  useDocumentTitle('Sign up')
   const { signup } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '', fullName: '' })

@@ -4,6 +4,7 @@ import { useAuth, type EffectiveRole, type MemberRole, type Membership, type Pla
 import { FormAlert, SubmitButton, TextField } from '../components/TextField'
 import { api, errorMessage, serverFieldErrors } from '../lib/api'
 import { MEMBER_ROLES, PLATFORM_ROLES, ROLE_LABELS } from '../lib/roles'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { validateEmail, validateFullName, type FieldErrors } from '../lib/validation'
 
 type UserStatus = 'active' | 'disabled'
@@ -30,6 +31,7 @@ const PAGE_SIZE = 20
 const selectClass = 'rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900'
 
 export function AdminUsersPage() {
+  useDocumentTitle('Users')
   const { user: me } = useAuth()
   const [draft, setDraft] = useState<Filters>({ q: '', role: '', status: '' })
   const [filters, setFilters] = useState<Filters>(draft)
