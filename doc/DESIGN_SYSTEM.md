@@ -4,7 +4,7 @@ The public `/design-system` route is a lazy-loaded, interactive component showca
 
 ## Foundations
 
-`frontend/src/index.css` is the source of truth. Tailwind v4 generates utilities from the tokens; prefer `bg-brand-700`, `text-ink-600`, `rounded-control` and `shadow-card` over stock palette colors.
+`frontend/src/index.css` is the source of truth. Wording, formats, theme choices and demo data follow the UAE market guide in [`UAE_MARKET.md`](UAE_MARKET.md). Tailwind v4 generates utilities from the tokens; prefer `bg-brand-700`, `text-ink-600`, `rounded-control` and `shadow-card` over stock palette colors.
 
 | Family | Usage | Main color |
 | --- | --- | --- |
