@@ -1,12 +1,14 @@
 from datetime import date
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError
+from app.core.time import uae_now
 from app.db.session import get_db
 from app.models import RecordCategory
+from app.reports.pdf import render_vehicle_report
 from app.schemas.vehicle import TimelineRecord, VehicleSummary, VehicleTimeline
 from app.services.timeline import TimelineFilters, get_vehicle_timeline
 from app.services.vin import InvalidVinError, normalize_vin
@@ -40,3 +42,28 @@ def vehicle_timeline(
         vehicle=VehicleSummary.model_validate(vehicle) if vehicle else None,
         records=[TimelineRecord.model_validate(record) for record in records],
     )
+
+
+@router.get(
+    "/{vin}/report.pdf",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}, "description": "Bilingual (English/Arabic) PDF report"}},
+)
+def vehicle_report(vin: str, db: Annotated[Session, Depends(get_db)]) -> Response:
+    """Consumer-safe PDF of the full history: vehicle facts, workshops, dates, readings, flags and corrections."""
+    try:
+        canonical_vin = normalize_vin(vin)
+    except InvalidVinError as exc:
+        raise ApiError(422, "invalid_vin", str(exc)) from exc
+    vehicle, records = get_vehicle_timeline(db, canonical_vin, TimelineFilters())
+    if vehicle is None or not records:
+        raise ApiError(404, "no_history", "There is no service history for this VIN yet.")
+    return Response(
+        render_vehicle_report(vehicle, records, generated_at=uae_now()),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="sijil-report-{canonical_vin}.pdf"',
+            "Cache-Control": "no-store",
+        },
+    )
+
