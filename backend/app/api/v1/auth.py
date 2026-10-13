@@ -14,11 +14,19 @@ from app.auth.dependencies import (
     set_session_cookie,
 )
 from app.auth.passwords import burn_verify_time, hash_password, verify_password
-from app.auth.sessions import create_session, revoke_other_sessions, revoke_session
+from app.auth.sessions import create_session, resolve_session, revoke_other_sessions, revoke_session
 from app.core.errors import ApiError
 from app.db.session import get_db
 from app.models import User, UserRole, UserStatus
-from app.schemas.auth import CsrfToken, LoginRequest, PasswordChange, ProfileUpdate, SignupRequest, UserOut
+from app.schemas.auth import (
+    CsrfToken,
+    LoginRequest,
+    PasswordChange,
+    ProfileUpdate,
+    SessionState,
+    SignupRequest,
+    UserOut,
+)
 from app.services.users import to_user_out
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -36,6 +44,15 @@ def _start_session(db: Session, response: Response, user: User) -> None:
 def csrf_token(response: Response) -> CsrfToken:
     """Issue the CSRF cookie. Clients call this once before their first POST/PATCH/DELETE."""
     return CsrfToken(csrf_token=set_csrf_cookie(response))
+
+
+@router.get("/session", response_model=SessionState)
+def current_session(request: Request, db: DbSession) -> SessionState:
+    """The signed-in user or null. Always 200: the SPA probes this on every page load, and a 401 for
+    guests would print an error in every visitor's browser console. Protected routes still answer 401."""
+    token = request.cookies.get(SESSION_COOKIE)
+    resolved = resolve_session(db, token) if token else None
+    return SessionState(user=to_user_out(db, resolved[1]) if resolved else None)
 
 
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)

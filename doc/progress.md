@@ -1,42 +1,41 @@
 # Sijil - Progress
 
-Last updated: 2026-10-12 (end of week 1, day 1). Update this file when a card moves to Review or Done.
+Last updated: 2026-10-13 (end of week 1, day 2). Update this file when a card moves to Review or Done.
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
 ## Summary
-- **Backend foundation is in place** (AG-01, AG-02 on `main`): FastAPI, full schema with Alembic, demo seed, VIN timeline API.
-- **Auth and permissions are built** (NA-01, NA-02, in Review): signup/login/logout with secure sessions and CSRF, user CRUD, roles, role-based views. Both are on branches, not yet merged.
-- **A minimal frontend exists** in `frontend/` (React + Vite + TypeScript + Tailwind), added for the NA-01/NA-02 pages. HA-01 can reshape it.
-- **Not started:** Docker Compose and Caddy (BU-02), so there is no single-command start yet.
-- **Module points earned so far: 0.** Advanced permissions has all checklist items ticked but still needs review and PO sign-off.
+- **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
+- **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
+- On `main`: backend 94 tests, frontend 67 tests, lint and build clean.
+- **Module points earned so far: 0.** Checklists are ticked for Frameworks (HA-01 + AG-01), ORM (AG-01), Advanced permissions (NA-02) and Custom design system (HA-02); each still needs Naser's PO sign-off.
 
 ## Card status
 
-| Card | Owner | Status | Where |
+| Card | Owner | Status | Notes |
 | --- | --- | --- | --- |
-| AG-01 Backend bootstrap, schema, migrations, seed | Agegnew | In Progress | `main` |
-| AG-02 VIN lookup and timeline | Agegnew | In Progress | `main` (API only, no page yet) |
-| NA-01 Signup, login, logout, profile | Naser | Review | branch `feat/na-01-auth` |
-| NA-02 Users, roles, role-based views | Naser | Review | branch `feat/na-02-users-roles` (built on NA-01) |
+| AG-01 Backend bootstrap, schema, migrations, seed | Agegnew | Done | |
+| AG-02 VIN lookup and timeline | Agegnew | Done | API + `/vehicles/:vin` page. The Watch button is disabled for signed-in users until HA-04. |
+| NA-01 Signup, login, logout, profile | Naser | Done | Follow-ups for NA-06 are on the Trello card |
+| NA-02 Users, roles, role-based views | Naser | Done | Turning a consumer into entity staff needs memberships (NA-04) |
+| HA-01 Frontend bootstrap and app shell | Hassan | Done | |
+| HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
 | BU-01 Architecture and contracts | Burhan | To Do | |
-| BU-02 Docker Compose, Caddy, HTTPS | Burhan | To Do | |
-| HA-01 Frontend bootstrap and app shell | Hassan | To Do | see "Notes for teammates" |
-| HA-02 Custom design system | Hassan | To Do | |
+| BU-02 Docker Compose, Caddy, HTTPS | Burhan | To Do | Blocks the week-1 single-command start |
 | All other cards (week 2-3) | | Backlog | |
 
-BU-09 (VIN decoder) has no owner on Trello yet; TEAM.md assigns it to Burhan.
-
-## Merge order
-1. `feat/na-01-auth`
-2. `feat/na-02-users-roles` (contains NA-01's commit, so merge it after)
+Week-1 review fixes merged on 2026-10-13:
+- `GET /api/v1/auth/session` answers 200 with `user: null` for guests, so loading the app no longer prints a 401 in the console.
+- Logout lands on `/` and only clears the user once the server confirms. A failed logout says so and keeps you signed in.
+- An admin edit that changes the email to a taken one and disables the user in the same request answers 409 (it used to answer 500). `page` on the user list is capped, so a huge value answers 422 instead of 500.
+- The admin user list shows its load error instead of a loading row that never ends. A favicon was added, so a clean load logs no 404.
 
 ## What you can build on
 
 ### Auth (NA-01)
 - Session cookie `sijil_session` (HttpOnly, Secure, SameSite=Lax). Only a hash of the token is stored in `sessions`.
 - **CSRF:** every POST/PUT/PATCH/DELETE under `/api/v1` must send the header `X-CSRF-Token` with the value of the `sijil_csrf` cookie. Get the cookie from `GET /api/v1/auth/csrf`. Without it the API answers 403 `csrf_failed`. The partner API (NA-05) will use its own router without this check.
-- Endpoints: `/api/v1/auth/{csrf,signup,login,logout}`, `GET/PATCH /api/v1/me`, `POST /api/v1/me/password`.
+- Endpoints: `/api/v1/auth/{csrf,session,signup,login,logout}`, `GET/PATCH /api/v1/me`, `POST /api/v1/me/password`. `GET /auth/session` is the SPA's start-up probe (200 with `user` or `null`); `/me` still answers 401 when signed out.
 - Passwords: 10 to 128 characters, Argon2id.
 
 ### Permissions (NA-02)
@@ -64,10 +63,11 @@ The approved-organization check is still up to the route. The guard checks membe
 
 ### Frontend (`frontend/`)
 - `src/lib/api.ts`: fetch wrapper that sends cookies, adds the CSRF header and turns error responses into `ApiError`.
-- `src/auth/`: `useAuth()` gives the current user and `login`/`signup`/`logout`.
+- `src/auth/`: `useAuth()` gives the current user and `login`/`signup`/`logout`. The start-up probe is `GET /api/v1/auth/session`.
 - `src/lib/roles.ts`: `hasRole()` and `navItemsFor()`. Add your nav links there, per role.
-- `RequireRole` in `src/App.tsx` guards routes by role.
-- `src/components/TextField.tsx` is a stopgap until the HA-02 design system.
+- `src/routes/guards.tsx`: `RequireAuth`, `RequireGuest` and `RequireRole`.
+- `src/components/ui`: the design system (see `doc/DESIGN_SYSTEM.md` and `/design-system`). Build every page from it.
+- `src/lib/vin.ts` (`parseVin`) and `src/lib/timeline.ts`: VIN normalization and timeline types. `/vehicles/:vin` is the consumer timeline page.
 
 ## Running and testing locally
 
@@ -78,15 +78,15 @@ cd frontend && npm install && npm run lint && npm test && npm run build
 
 Dev setup: run the backend on port 8000 (see `backend/README.md`) and `npm run dev` in `frontend/`. Vite proxies `/api` to the backend. Demo accounts come from `python -m app.seed` and are listed in `backend/README.md`.
 
-Current results on the NA-02 branch: backend 89 tests pass, frontend 8 tests pass, lint and build clean.
+Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint and build clean.
 
 ## Notes for teammates
-- **Hassan (HA-01, HA-02):** `frontend/` was scaffolded early so the auth pages could ship. The app shell, layout and components are yours: restructure freely and keep `lib/api.ts` and the auth context, or replace them with the same behaviour (cookies + CSRF header).
+- **Hassan (HA-04):** the Watch button lives in `src/components/WatchVinButton.tsx`. Guests are sent to log in and come back to the VIN. Wire the signed-in state to the watchlist API there.
 - **Burhan (BU-02):** the session and CSRF cookies are `Secure`, so the stack has to be served over HTTPS through Caddy. Caddy should route `/api/*` to FastAPI and everything else to the frontend build. `COOKIE_SECURE` and `SESSION_TTL_HOURS` are in `backend/.env.example`.
 - **Agegnew (AG-03 onward):** use `require_org_role` for record submission. Deleting a user leaves their service records in place, with `staff_id` set to NULL and the stored `staff_name` kept.
 - **Seed and test emails:** the email validator rejects reserved domains such as `.test` and `.local`. The seed's `@sijil.demo` addresses are fine. In tests, use `@example.ae`.
 
 ## Open items
 - Rate limiting on login and signup is planned for NA-06.
-- No real-browser check (Chrome console) has been done on the pages yet.
+- A wrong-password login still shows the API's 401 in the console. That is the failure path, not a page load.
 - NA-03 (organizations and approval) depends on BU-03 for licence document uploads.
