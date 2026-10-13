@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 
 import { buttonClass, Icon } from '../components/ui'
 import { useAuth } from '../auth/auth-context'
+import { VinSearchForm } from '../components/VinSearchForm'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 export function HomePage() {
@@ -15,6 +16,9 @@ export function HomePage() {
         Approved workshops record every service against the car&apos;s VIN. Buyers see the full timeline, including
         corrections and mileage warnings, before they decide.
       </p>
+      <div className="w-full max-w-xl">
+        <VinSearchForm />
+      </div>
       {user ? (
         <Link to="/profile" className={buttonClass({size: 'lg'})}>
           Go to your account

@@ -16,6 +16,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default:
 const SignupPage = lazy(() => import('./pages/SignupPage').then((m) => ({ default: m.SignupPage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })))
+const VehicleTimelinePage = lazy(() => import('./pages/VehicleTimelinePage').then((m) => ({ default: m.VehicleTimelinePage })))
 
 export function App() {
   return (
@@ -49,6 +50,7 @@ function AppRoutes() {
           <>
             <Route index element={<HomePage />} />
             <Route path="design-system" element={<Lazy><DesignSystemPage /></Lazy>} />
+            <Route path="vehicles/:vin" element={<Lazy><VehicleTimelinePage /></Lazy>} />
             <Route path="login" element={<Lazy><RequireGuest><LoginPage /></RequireGuest></Lazy>} />
             <Route path="signup" element={<Lazy><RequireGuest><SignupPage /></RequireGuest></Lazy>} />
             <Route path="profile" element={<Lazy><RequireAuth>{user ? <ProfilePage user={user} /> : null}</RequireAuth></Lazy>} />
