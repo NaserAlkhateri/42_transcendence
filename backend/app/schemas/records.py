@@ -1,20 +1,15 @@
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import date
 from typing import Annotated
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 
+from app.core.time import uae_today
 from app.models import CorrectionReason, RecordCategory
 from app.schemas.vehicle import TimelineRecord
 from app.services.work_codes import BY_CODE
 
-# The UAE has no daylight saving: Gulf Standard Time is always UTC+4.
-UAE_TIME = timezone(timedelta(hours=4), "GST")
 MAX_ODOMETER_KM = 2_000_000
-
-
-def uae_today() -> date:
-    return datetime.now(UAE_TIME).date()
 
 
 class RecordFields(BaseModel):

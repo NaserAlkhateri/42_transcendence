@@ -3,7 +3,7 @@ import { Navigate, useLocation, useParams, useSearchParams } from 'react-router-
 
 import { VinSearchForm } from '../components/VinSearchForm'
 import { WatchVinButton } from '../components/WatchVinButton'
-import { Alert, Badge, Button, Card, Checkbox, EmptyState, Select, Spinner, TextField } from '../components/ui'
+import { Alert, Badge, Button, Card, Checkbox, EmptyState, Icon, Select, Spinner, TextField, buttonClass } from '../components/ui'
 import { errorMessage, http } from '../lib/api'
 import {
   CATEGORY_LABELS,
@@ -78,11 +78,20 @@ function Timeline({ vin }: { vin: string }) {
     <section className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <VinSearchForm />
 
-      <header className="flex flex-col gap-1">
-        <h1>{describeVehicle(data?.vehicle ?? null) ?? 'Vehicle history'}</h1>
-        <p className="text-ink-600">
-          VIN <span className="font-mono font-semibold text-ink-800">{vin}</span>
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1>{describeVehicle(data?.vehicle ?? null) ?? 'Vehicle history'}</h1>
+          <p className="text-ink-600">
+            VIN <span className="font-mono font-semibold text-ink-800">{vin}</span>
+          </p>
+        </div>
+        {data?.vehicle ? (
+          // The report always covers the full history in English and Arabic, whatever filters are set here.
+          <a href={`/api/v1/vehicles/${vin}/report.pdf`} download className={buttonClass({ variant: 'secondary' })}>
+            <Icon name="document" className="me-2" />
+            Download report (PDF)
+          </a>
+        ) : null}
       </header>
 
       <form aria-label="Filter records" onSubmit={(event) => event.preventDefault()} className="flex flex-wrap items-start gap-3">
