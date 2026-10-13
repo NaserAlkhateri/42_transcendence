@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, CreatedAt, UUIDPrimaryKey
-from app.models.enums import AttachmentScope, RecordCategory, db_enum
+from app.models.enums import AttachmentScope, CorrectionReason, RecordCategory, db_enum
 
 
 class Vehicle(UUIDPrimaryKey, CreatedAt, Base):
@@ -27,6 +27,7 @@ class ServiceRecord(UUIDPrimaryKey, CreatedAt, Base):
     __table_args__ = (
         CheckConstraint("odometer_km >= 0", name="odometer_non_negative"),
         CheckConstraint("corrects_record_id IS NULL OR corrects_record_id <> id", name="no_self_correction"),
+        CheckConstraint("(corrects_record_id IS NULL) = (correction_reason IS NULL)", name="correction_has_reason"),
         Index("ix_service_records_vehicle_timeline", "vehicle_id", "service_date", "created_at"),
     )
 
@@ -44,9 +45,11 @@ class ServiceRecord(UUIDPrimaryKey, CreatedAt, Base):
     service_date: Mapped[date]
     is_mileage_flagged: Mapped[bool] = mapped_column(default=False, index=True)
     notes: Mapped[str | None] = mapped_column(Text)
+    # Unique: a record is corrected at most once; a later fix corrects the correction (a chain).
     corrects_record_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("service_records.id", ondelete="RESTRICT"), index=True
+        ForeignKey("service_records.id", ondelete="RESTRICT"), index=True, unique=True
     )
+    correction_reason: Mapped[CorrectionReason | None] = mapped_column(db_enum(CorrectionReason, "correction_reason"))
 
 
 class Attachment(UUIDPrimaryKey, CreatedAt, Base):

@@ -1,9 +1,11 @@
 import itertools
 from datetime import date
+from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.models import (
+    CorrectionReason,
     Organization,
     OrganizationKind,
     OrganizationStatus,
@@ -15,6 +17,7 @@ from app.models import (
 )
 
 _sequence = itertools.count(1)
+_AUTO: Any = object()
 
 
 def make_user(db: Session, *, full_name: str = "Test Staff", role: UserRole = UserRole.CONSUMER) -> User:
@@ -51,8 +54,12 @@ def make_record(
     category: RecordCategory = RecordCategory.MAINTENANCE,
     flagged: bool = False,
     corrects: ServiceRecord | None = None,
+    reason: CorrectionReason | None = _AUTO,
     notes: str | None = None,
 ) -> ServiceRecord:
+    """`reason` defaults to ODOMETER for a correction and None otherwise; pass it to build an invalid row."""
+    if reason is _AUTO:
+        reason = CorrectionReason.ODOMETER if corrects else None
     record = ServiceRecord(
         vehicle_id=vehicle.id,
         organization_id=org.id,
@@ -65,6 +72,7 @@ def make_record(
         service_date=service_date,
         is_mileage_flagged=flagged,
         corrects_record_id=corrects.id if corrects else None,
+        correction_reason=reason,
         notes=notes,
     )
     db.add(record)

@@ -5,7 +5,7 @@ from sqlalchemy import Engine, func, inspect, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import MemberRole, OrganizationMember, ServiceRecord, User
+from app.models import CorrectionReason, MemberRole, OrganizationMember, ServiceRecord, User
 from tests.factories import make_org, make_record, make_user, make_vehicle
 
 EXPECTED_TABLES = {
@@ -98,3 +98,23 @@ def test_vehicle_with_history_cannot_be_deleted(db: Session) -> None:
     with pytest.raises(IntegrityError):
         db.execute(text("DELETE FROM vehicles WHERE id = :id"), {"id": vehicle.id})
     db.rollback()
+
+
+def test_a_record_can_be_corrected_only_once(db: Session) -> None:
+    # Corrections form a chain: to fix a correction, correct the correction. Two corrections of one record
+    # would leave two competing "effective" readings.
+    org, staff, vehicle = make_org(db), make_user(db), make_vehicle(db)
+    original = make_record(db, vehicle, org, staff)
+    make_record(db, vehicle, org, staff, corrects=original, reason=CorrectionReason.ODOMETER)
+    with pytest.raises(IntegrityError):
+        make_record(db, vehicle, org, staff, corrects=original, reason=CorrectionReason.SERVICE_DATE)
+
+
+def test_only_corrections_carry_a_reason_and_every_correction_has_one(db: Session) -> None:
+    org, staff, vehicle = make_org(db), make_user(db), make_vehicle(db)
+    original = make_record(db, vehicle, org, staff)
+    with pytest.raises(IntegrityError), db.begin_nested():
+        make_record(db, vehicle, org, staff, corrects=original, reason=None)
+    with pytest.raises(IntegrityError), db.begin_nested():
+        make_record(db, vehicle, org, staff, reason=CorrectionReason.OTHER)
+

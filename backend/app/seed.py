@@ -15,6 +15,7 @@ from app.auth.passwords import hash_password
 from app.core.config import get_settings
 from app.db.session import get_engine
 from app.models import (
+    CorrectionReason,
     MemberRole,
     Organization,
     OrganizationKind,
@@ -185,6 +186,7 @@ def _add_records(
             service_date=spec.service_date,
             is_mileage_flagged=spec.flagged,
             corrects_record_id=created[spec.corrects].id if spec.corrects is not None else None,
+            correction_reason=CorrectionReason.ODOMETER if spec.corrects is not None else None,
         )
         db.add(record)
         db.flush()

@@ -55,6 +55,16 @@ class RecordCategory(enum.StrEnum):
     REPAIR = "repair"
 
 
+class CorrectionReason(enum.StrEnum):
+    """What a correction fixes. A fixed list (not free text) so public reports can show it without personal data."""
+
+    ODOMETER = "odometer"
+    SERVICE_DATE = "service_date"
+    WORK_DONE = "work_done"
+    CATEGORY = "category"
+    OTHER = "other"
+
+
 class AttachmentScope(enum.StrEnum):
     ORGANIZATION = "organization"  # submitting organization + platform admins
     PLATFORM = "platform"  # platform admins only

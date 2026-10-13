@@ -4,6 +4,7 @@ from app.models.audit import AuditEvent
 from app.models.engagement import Notification, Watchlist
 from app.models.enums import (
     AttachmentScope,
+    CorrectionReason,
     MemberRole,
     MemberStatus,
     OrganizationKind,
@@ -18,7 +19,7 @@ from app.models.user import User, UserSession
 from app.models.vehicle import Attachment, ServiceRecord, Vehicle
 
 __all__ = [
-    "ApiKey", "Attachment", "AttachmentScope", "AuditEvent", "MemberRole", "MemberStatus", "Notification",
+    "ApiKey", "Attachment", "AttachmentScope", "AuditEvent", "CorrectionReason", "MemberRole", "MemberStatus", "Notification",
     "Organization", "OrganizationKind", "OrganizationMember", "OrganizationStatus", "PartnerWatchlist",
     "RecordCategory", "ServiceRecord", "User", "UserRole", "UserSession", "UserStatus", "Vehicle", "Watchlist",
 ]
