@@ -24,8 +24,8 @@ export function VinSearchForm() {
   return (
     <form role="search" aria-label="VIN lookup" noValidate onSubmit={onSubmit} className="flex w-full flex-wrap items-start gap-3">
       <TextField
-        label="VIN"
-        hint="17 characters, printed on the windscreen and the registration card."
+        label="VIN (chassis number)"
+        hint="17 characters. On your Mulkiya it is the Chassis No."
         value={value}
         onChange={(event) => setValue(event.target.value)}
         error={error}
