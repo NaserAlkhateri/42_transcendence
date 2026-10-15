@@ -11,10 +11,12 @@ from typing import NamedTuple
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth.api_keys import DEFAULT_SCOPES, hash_secret, parse_key
 from app.auth.passwords import hash_password
 from app.core.config import get_settings
 from app.db.session import get_engine
 from app.models import (
+    ApiKey,
     CorrectionReason,
     MemberRole,
     Organization,
@@ -193,13 +195,41 @@ def _add_records(
         created.append(record)
 
 
+DEMO_PARTNER_NAME = "Demo Insurer (fictional)"
+
+
+def seed_partner_key(db: Session, raw_key: str) -> ApiKey:
+    """Make `raw_key` a working partner key, so evaluators can call the partner API (NA-05). The key itself
+    comes from the untracked .env (SEED_PARTNER_API_KEY); only its hash is stored. Safe to run on every start."""
+    parsed = parse_key(raw_key)
+    if parsed is None or not all(c in "0123456789abcdef" for c in parsed[0]) or len(parsed[1]) < 32:
+        raise ValueError("SEED_PARTNER_API_KEY must look like sjl_<8 hex digits>_<secret of 32+ characters>.")
+    prefix, secret = parsed
+    key = db.scalar(select(ApiKey).where(ApiKey.key_prefix == prefix))
+    if key is None:
+        key = ApiKey(partner_name=DEMO_PARTNER_NAME, key_prefix=prefix, key_hash=hash_secret(secret), scopes=list(DEFAULT_SCOPES))
+        db.add(key)
+    else:  # keep the seeded key usable if the secret in .env changed or it was revoked
+        key.key_hash = hash_secret(secret)
+        key.revoked_at = None
+    db.flush()
+    return key
+
+
 def main() -> int:
-    password = get_settings().seed_demo_password
+    settings = get_settings()
+    password = settings.seed_demo_password
     if not password:
         print("SEED_DEMO_PASSWORD is not set; refusing to create demo accounts without it.", file=sys.stderr)
         return 1
     with Session(get_engine()) as db, db.begin():
         seed(db, password)
+        if settings.seed_partner_api_key:
+            try:
+                seed_partner_key(db, settings.seed_partner_api_key)
+            except ValueError as exc:
+                print(exc, file=sys.stderr)
+                return 1
     print("Demo data is in place.")
     return 0
 

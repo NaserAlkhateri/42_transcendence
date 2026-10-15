@@ -85,7 +85,7 @@ Source of truth: `backend/app/models/` and `backend/alembic/versions/`.
 
 ### Pending migration (`0002`)
 The initial schema (`0001_initial_schema.py`) predates three decisions, so a second migration is needed:
-1. `api_keys.organization_id` is replaced by `partner_name` and `issued_by_id`; keys belong to named partners, not organizations.
+1. ~~`api_keys.organization_id` is replaced by `partner_name` and `issued_by_id`; keys belong to named partners, not organizations.~~ Done in `0004_partner_api_keys.py` (NA-05), which also adds `label` and `last_checked_at` to `partner_watchlists`.
 2. `attachments` (linked to `service_records`) is replaced by `organization_documents` (linked to `organizations`).
 3. `vehicles` gains `body_class`, `engine`, `decode_source` and `decoded_at` (make, model and model_year already exist).
 

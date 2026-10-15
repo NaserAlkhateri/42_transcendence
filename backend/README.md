@@ -92,6 +92,17 @@ An organization's active entity admins manage its members. Platform admins can d
 - Entity admins can't reset a member's password: a member may be a personal account they don't own.
 - Every change writes an `audit_events` row (never the temporary password) and publishes `membership.added`, `membership.updated` or `membership.removed` (organization id and name, user id, role, status) for notifications (BU-05).
 
+## Partner API (NA-05)
+
+Partners call `/api/partner/v1` with an admin-issued key in `X-API-Key`. The guide for partners is [`doc/PARTNER_API.md`](../doc/PARTNER_API.md), and the interactive reference is at `/api/partner/v1/docs`.
+
+- Six endpoints: `GET /vehicles/{vin}`, `GET /vehicles/{vin}/history`, `GET /watches`, `POST /watches`, `PUT /watches/{id}`, `DELETE /watches/{id}`. None of them can change service history.
+- Keys look like `sjl_<8-hex prefix>_<secret>`. The prefix is stored in clear for lookup and display; the secret only as a SHA-256 hash. A missing, unknown or revoked key answers 401.
+- Rate limit per key (`PARTNER_RATE_LIMIT` requests per `PARTNER_RATE_WINDOW_SECONDS`, default 60 per 60 s). Responses carry `X-RateLimit-*`; over the limit gives 429 with `Retry-After`. Failed authentication is limited per client IP. The counters are in process memory (`app/services/rate_limit.py`), so move them to Redis if the API is ever scaled out.
+- The partner API is outside the cookie/CSRF router: a browser session does not open it.
+- Admin: `GET/POST /api/v1/admin/api-keys` and `POST /api/v1/admin/api-keys/{id}/revoke` (platform admin). Issued keys are shown once, and every issue or revoke is audited.
+- Demo key: set `SEED_PARTNER_API_KEY` in `.env` and run the seed. It creates "Demo Insurer (fictional)" with that key.
+
 ## Service records (AG-03)
 
 Active `entity_staff` and `entity_admin` members of an **approved** organization append records. Consumers and platform admins cannot write history. Records are permanent: a mistake is fixed with a correction (AG-04).

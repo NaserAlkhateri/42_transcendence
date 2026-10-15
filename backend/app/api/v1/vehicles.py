@@ -10,7 +10,7 @@ from app.db.session import get_db
 from app.models import RecordCategory
 from app.reports.pdf import render_vehicle_report
 from app.schemas.vehicle import TimelineRecord, VehicleSummary, VehicleTimeline
-from app.services.timeline import TimelineFilters, get_vehicle_timeline
+from app.services.timeline import TimelineFilters, get_vehicle_timeline, has_history
 from app.services.vin import InvalidVinError, normalize_vin
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
@@ -37,6 +37,8 @@ def vehicle_timeline(
     vehicle, records = get_vehicle_timeline(
         db, canonical_vin, TimelineFilters(category, flagged, date_from, date_to, order)
     )
+    if vehicle is not None and not records and not has_history(db, vehicle):
+        vehicle = None  # only watched so far: keep the "no history yet, offer Watch" contract
     return VehicleTimeline(
         vin=canonical_vin,
         vehicle=VehicleSummary.model_validate(vehicle) if vehicle else None,
