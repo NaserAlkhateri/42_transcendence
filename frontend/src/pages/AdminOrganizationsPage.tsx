@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 
+import { MembersPanel } from '../components/MembersPanel'
 import { OrganizationFields } from '../components/OrganizationFields'
 import { Alert, Badge, Button, Card, FormAlert, Modal, Pagination, Select, Table, Textarea, TextField } from '../components/ui'
 import { errorMessage, http, serverFieldErrors } from '../lib/api'
@@ -24,7 +25,6 @@ import {
   type OrganizationPage,
   type OrganizationStatus,
 } from '../lib/organizations'
-import { ROLE_LABELS } from '../lib/roles'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import type { FieldErrors } from '../lib/validation'
 
@@ -211,21 +211,7 @@ function ManageOrganization({ id, onClose, onChanged }: { id: string; onClose: (
         <EditDetails key={organization.updated_at} organization={organization}
           onSave={(changes) => act(() => http.patch<AdminOrganizationDetail>(`/admin/organizations/${organization.id}`, changes))} />
 
-        <section aria-labelledby="members-heading">
-          <h3 id="members-heading" className="mb-2">Members</h3>
-          {organization.members.length ? (
-            <ul className="flex flex-col gap-1 text-sm">
-              {organization.members.map((member) => (
-                <li key={member.membership_id}>
-                  {member.full_name} <span className="text-ink-500">({member.email})</span> · {ROLE_LABELS[member.role]}
-                  {member.status === 'inactive' ? <span className="text-ink-500"> · inactive</span> : null}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-ink-600">No members yet.</p>
-          )}
-        </section>
+        <MembersPanel organizationId={organization.id} onChanged={() => void onChanged()} />
 
         <div className="border-t border-ink-200 pt-4">
           <Button variant="danger" onClick={() => setDeleting(true)}>Delete organisation</Button>
@@ -366,7 +352,7 @@ function CreateOrganization({ open, onClose, onCreated }: {
         </>
       }>
       <div className="flex flex-col gap-4">
-        <p className="text-sm text-ink-600">Organisations you add are approved straight away and start with no members.</p>
+        <p className="text-sm text-ink-600">Organisations you add are approved straight away. Add their first entity admin from Members.</p>
         <FormAlert message={alert} />
         <OrganizationFields form={form} errors={errors} onChange={setForm} />
       </div>

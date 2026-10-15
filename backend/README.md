@@ -73,6 +73,25 @@ A workshop or dealership registers and starts **pending**. A platform admin appr
 - Every registration, edit, review, resubmission and deletion writes an `audit_events` row.
 - Licence documents (BU-03) are not shown on the review screen yet.
 
+## Organization members and staff accounts (NA-04)
+
+An organization's active entity admins manage its members. Platform admins can do the same for any organization, for example to add the first admin to one they created.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/organizations/{id}/members` | List members |
+| POST | `/api/v1/organizations/{id}/members` | Add an existing account: `email`, `role` |
+| POST | `/api/v1/organizations/{id}/members/staff-accounts` | Create an account: `email`, `full_name`, `role`. Returns the member and a `temporary_password`, shown once. |
+| PATCH | `/api/v1/organizations/{id}/members/{membership_id}` | Change `role` (entity_admin / entity_staff) or `status` (active / inactive) |
+| DELETE | `/api/v1/organizations/{id}/members/{membership_id}` | Remove from the organization. The account stays. |
+
+- A staff account starts with `must_change_password`, so it can do nothing but change its password (NA-01) until it does.
+- Only **approved** organizations can add members or create accounts (403 `organization_not_approved`), so an unvetted registration can't mint accounts. Platform admins are exempt.
+- An organization always keeps at least one active entity admin (409 `last_entity_admin`). This also applies to the admin endpoint `PATCH /admin/users/{id}/memberships/{membership_id}`. Changes lock the organization row, so two admins can't demote each other at the same moment.
+- Only entity roles can be granted here. Platform-admin accounts can't join an organization (409 `cannot_add_platform_admin`).
+- Entity admins can't reset a member's password: a member may be a personal account they don't own.
+- Every change writes an `audit_events` row (never the temporary password) and publishes `membership.added`, `membership.updated` or `membership.removed` (organization id and name, user id, role, status) for notifications (BU-05).
+
 ## Service records (AG-03)
 
 Active `entity_staff` and `entity_admin` members of an **approved** organization append records. Consumers and platform admins cannot write history. Records are permanent: a mistake is fixed with a correction (AG-04).

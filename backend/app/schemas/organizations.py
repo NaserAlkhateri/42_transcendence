@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, BaseModel, StringConstraints
 
 from app.models import MemberRole, MemberStatus, OrganizationKind, OrganizationStatus
+from app.schemas.auth import Email, FullName
 
 # Official English spellings (doc/UAE_MARKET.md). Addresses are emirate + area; there are no postcodes.
 Emirate = Literal["Abu Dhabi", "Dubai", "Sharjah", "Ajman", "Umm Al Quwain", "Ras Al Khaimah", "Fujairah"]
@@ -81,3 +82,28 @@ class OrganizationPage(BaseModel):
     page: int
     page_size: int
 
+
+
+class MemberAdd(BaseModel):
+    """Add someone who already has a Sijil account."""
+
+    email: Email
+    role: MemberRole
+
+
+class StaffAccountCreate(BaseModel):
+    """Create a new account for a staff member. They sign in with a temporary password and must change it."""
+
+    email: Email
+    full_name: FullName
+    role: MemberRole = MemberRole.ENTITY_STAFF
+
+
+class MemberUpdate(BaseModel):
+    role: MemberRole | None = None
+    status: MemberStatus | None = None
+
+
+class StaffAccountCreated(BaseModel):
+    member: OrganizationMemberOut
+    temporary_password: str  # shown once; only its hash is stored

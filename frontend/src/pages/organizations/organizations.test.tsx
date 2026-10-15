@@ -177,6 +177,7 @@ describe('admin: organisations', () => {
     const pending = adminDetail()
     const calls = stubApi(admin, {
       'GET /api/v1/admin/organizations': () => page([pending]),
+      'GET /api/v1/organizations/org-1/members': () => json(adminDetail().members),
       'GET /api/v1/admin/organizations/org-1': () => json(pending),
       'POST /api/v1/admin/organizations/org-1/approve': () => json(adminDetail({ status: 'approved', approved_at: '2026-04-12T08:00:00Z' })),
     })
@@ -194,6 +195,7 @@ describe('admin: organisations', () => {
     const pending = adminDetail()
     const calls = stubApi(admin, {
       'GET /api/v1/admin/organizations': () => page([pending]),
+      'GET /api/v1/organizations/org-1/members': () => json(adminDetail().members),
       'GET /api/v1/admin/organizations/org-1': () => json(pending),
       'POST /api/v1/admin/organizations/org-1/reject': (body) => json(adminDetail({
         status: 'rejected', rejection_reason: (body as { reason: string }).reason,
@@ -220,6 +222,7 @@ describe('admin: organisations', () => {
     const approved = adminDetail({ status: 'approved' })
     const calls = stubApi(admin, {
       'GET /api/v1/admin/organizations': () => page([approved]),
+      'GET /api/v1/organizations/org-1/members': () => json(adminDetail().members),
       'GET /api/v1/admin/organizations/org-1': () => json(approved),
       'DELETE /api/v1/admin/organizations/org-1': () => new Response(null, { status: 204 }),
     })
