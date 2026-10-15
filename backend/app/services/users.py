@@ -41,7 +41,7 @@ def to_user_out(db: Session, user: User) -> UserOut:
     pairs = memberships_by_user(db, [user.id])[user.id]
     return UserOut(
         **_base_fields(user),
-        effective_role=effective_role(user, [m for m, _ in pairs]),
+        effective_role=effective_role(user, pairs),
         memberships=[_membership_out(m, o) for m, o in pairs],
     )
 
@@ -53,7 +53,7 @@ def to_admin_user_outs(db: Session, users: list[User]) -> list[AdminUserOut]:
             **_base_fields(user),
             status=user.status,
             updated_at=user.updated_at,
-            effective_role=effective_role(user, [m for m, _ in grouped[user.id]]),
+            effective_role=effective_role(user, grouped[user.id]),
             memberships=[_membership_out(m, o) for m, o in grouped[user.id]],
         )
         for user in users

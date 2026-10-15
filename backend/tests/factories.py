@@ -29,7 +29,9 @@ def make_user(db: Session, *, full_name: str = "Test Staff", role: UserRole = Us
 
 def make_org(db: Session, *, name: str = "Test Garage", status: OrganizationStatus = OrganizationStatus.APPROVED) -> Organization:
     org = Organization(
-        name=name, kind=OrganizationKind.WORKSHOP, registration_number=f"TEST-{next(_sequence):05d}", status=status
+        name=name, kind=OrganizationKind.WORKSHOP, registration_number=f"TEST-{next(_sequence):05d}", status=status,
+        emirate="Dubai",
+        rejection_reason="Trade licence could not be verified." if status == OrganizationStatus.REJECTED else None,
     )
     db.add(org)
     db.flush()

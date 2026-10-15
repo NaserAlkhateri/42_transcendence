@@ -1,6 +1,6 @@
 # Sijil - Progress
 
-Last updated: 2026-10-13 (week 2: Agegnew's cards done). Update this file when a card moves to Review or Done.
+Last updated: 2026-10-15 (week 2: Agegnew's cards done, NA-03 in Review). Update this file when a card moves to Review or Done.
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
@@ -8,7 +8,8 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
 - **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
-- On `main`: backend 154 tests, frontend 98 tests, lint and build clean.
+- **NA-03 organizations is in Review** on `feat/na-03-organizations`: registration, admin review (approve/reject with a reason, withdraw approval), create/edit/delete. Showing licence documents on the review screen waits for BU-03.
+- On `main`: backend 154 tests, frontend 98 tests, lint and build clean. With NA-03: backend 172, frontend 119.
 - **Module points earned so far: 0.** Checklists are ticked for Frameworks (HA-01 + AG-01), ORM (AG-01), Advanced permissions (NA-02) and Custom design system (HA-02); each still needs Naser's PO sign-off.
 
 ## Card status
@@ -26,6 +27,7 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for BU-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
+| NA-03 Organizations: registration, approval, CRUD | Naser | Review | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents on the review screen wait for BU-03. |
 | All other cards (week 2-3) | | Backlog | |
 
 Week-1 review fixes merged on 2026-10-13:
@@ -89,9 +91,12 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 - **Hassan (HA-04):** the Watch button lives in `src/components/WatchVinButton.tsx`. Guests are sent to log in and come back to the VIN. Wire the signed-in state to the watchlist API there.
 - **Burhan (BU-02):** the session and CSRF cookies are `Secure`, so the stack has to be served over HTTPS through Caddy. Caddy should route `/api/*` to FastAPI and everything else to the frontend build. `COOKIE_SECURE` and `SESSION_TTL_HOURS` are in `backend/.env.example`.
 - **Agegnew (AG-03 onward):** use `require_org_role` for record submission. Deleting a user leaves their service records in place, with `staff_id` set to NULL and the stored `staff_name` kept.
+- **Burhan (BU-03, BU-05):** registration and review are in place (NA-03). For BU-03, add the licence documents to `GET /api/v1/admin/organizations/{id}` and show them in the Manage panel on `/admin/organizations`; members upload from `/organizations/:id`. For BU-05, `organization.reviewed` is published on approve and reject (`organization_id`, `name`, `status`, `rejection_reason`).
+- **Entity roles need an approved organization:** since NA-03, `effective_role` only counts memberships of approved organizations. A pending registrant is `consumer` in the UI, but `require_org_role` still lets them manage their own registration.
 - **Seed and test emails:** the email validator rejects reserved domains such as `.test` and `.local`. The seed's `@sijil.demo` addresses are fine. In tests, use `@example.ae`.
 
 ## Open items
 - Rate limiting on login and signup is planned for NA-06.
 - A wrong-password login still shows the API's 401 in the console. That is the failure path, not a page load.
-- NA-03 (organizations and approval) depends on BU-03 for licence document uploads.
+- NA-03's review screen shows no licence documents until BU-03 lands.
+- Members are added and removed in NA-04 (next). An admin-created organization starts with no members.

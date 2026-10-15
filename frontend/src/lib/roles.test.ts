@@ -52,3 +52,39 @@ describe('record tools in the navigation', () => {
     }
   })
 })
+
+describe('organisation links in the navigation', () => {
+  const labels = (u: User) => navItemsFor(u).map((item) => item.label)
+  const member = (organization_status: 'pending' | 'approved' | 'rejected'): User => ({
+    ...user(organization_status === 'approved' ? 'entity_admin' : 'consumer'),
+    memberships: [{
+      id: 'm1', organization_id: 'org-1', organization_name: 'Corniche Tyre Centre', organization_status,
+      role: 'entity_admin', status: 'active',
+    }],
+  })
+
+  it('invites consumers without a membership to register a business', () => {
+    expect(labels(user('consumer'))).toContain('Register a business')
+    expect(labels(user('consumer'))).not.toContain('Organisation')
+  })
+
+  it('links members to their organisation, even while it is pending', () => {
+    for (const status of ['pending', 'approved', 'rejected'] as const) {
+      const items = navItemsFor(member(status))
+      expect(items).toContainEqual({ to: '/organizations/org-1', label: 'Organisation' })
+      expect(items.map((item) => item.label)).not.toContain('Register a business')
+    }
+    // Record tools only once the organisation is approved (effective_role comes from the backend).
+    expect(labels(member('pending'))).not.toContain('Add record')
+  })
+
+  it('gives platform admins the organisation admin page instead', () => {
+    expect(labels(user('platform_admin'))).toContain('Organisations')
+    expect(labels(user('platform_admin'))).not.toContain('Register a business')
+    expect(labels(user('consumer'))).not.toContain('Organisations')
+  })
+
+  it('offers nothing extra while a temporary password is pending', () => {
+    expect(labels(user('consumer', true))).toEqual(['Profile'])
+  })
+})

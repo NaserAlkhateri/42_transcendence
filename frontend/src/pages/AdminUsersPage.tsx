@@ -86,7 +86,7 @@ export function AdminUsersPage() {
         {key:'role',header:'Role',render:item=>ROLE_LABELS[item.effective_role]},
         {key:'organizations',header:'Organizations',render:item=>item.memberships.map(m=>m.organization_name).join(', ') || '—'},
         {key:'status',header:'Status',render:item=><Badge variant={item.status === 'active' ? 'success' : 'danger'}>{item.status}</Badge>},
-        {key:'actions',header:'Actions',render:item=><Button variant="ghost" size="sm" onClick={()=>setSelectedId(item.id)}>Manage<span className="sr-only"> {item.full_name}</span></Button>},
+        {key:'actions',header:'Actions',render:item=><Button variant="ghost" size="sm" onClick={()=>setSelectedId(item.id)} aria-label={`Manage ${item.full_name}`}>Manage</Button>},
       ]} />
       {data && <Pagination total={data.total} pageSize={data.page_size} page={page} onPageChange={setPage} />}
 
