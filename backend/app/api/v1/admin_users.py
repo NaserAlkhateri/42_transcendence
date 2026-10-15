@@ -25,6 +25,7 @@ from app.models import (
 from app.schemas.auth import EffectiveRole
 from app.schemas.users import AdminUserOut, AdminUserUpdate, MembershipRoleUpdate, UserPage
 from app.services.audit import record_audit
+from app.services.organizations import require_another_admin
 from app.services.users import to_admin_user_outs
 
 router = APIRouter(prefix="/admin/users", tags=["admin: users"])
@@ -167,6 +168,8 @@ def update_membership_role(
     if membership is None:
         raise ApiError(404, "membership_not_found", "Membership not found for this user.")
     if membership.role != body.role:
+        if body.role == MemberRole.ENTITY_STAFF:
+            require_another_admin(db, membership)
         record_audit(
             db, admin, "membership.role_changed", "organization_member", membership.id,
             {"user_id": str(user.id), "organization_id": str(membership.organization_id),

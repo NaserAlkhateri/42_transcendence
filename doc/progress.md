@@ -1,6 +1,6 @@
 # Sijil - Progress
 
-Last updated: 2026-10-15 (week 2: Agegnew's cards done, NA-03 in Review). Update this file when a card moves to Review or Done.
+Last updated: 2026-10-15 (week 2: Agegnew's cards done, NA-03 merged, NA-04 in Review). Update this file when a card moves to Review or Done.
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
@@ -8,8 +8,9 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
 - **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
-- **NA-03 organizations is in Review** on `feat/na-03-organizations`: registration, admin review (approve/reject with a reason, withdraw approval), create/edit/delete. Showing licence documents on the review screen waits for BU-03.
-- On `main`: backend 154 tests, frontend 98 tests, lint and build clean. With NA-03: backend 172, frontend 119.
+- **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for BU-03.
+- **NA-04 members and staff accounts is in Review** on `feat/na-04-members`: entity admins add and remove members, create staff accounts with a temporary password, and assign entity roles. With NA-03 + NA-04, all four Organization-system checklist items are ticked; the module still needs a peer review and Naser's PO sign-off.
+- On `main` (with NA-03): backend 172 tests, frontend 119 tests, lint and build clean. With NA-04: backend 186, frontend 125.
 - **Module points earned so far: 0.** Checklists are ticked for Frameworks (HA-01 + AG-01), ORM (AG-01), Advanced permissions (NA-02) and Custom design system (HA-02); each still needs Naser's PO sign-off.
 
 ## Card status
@@ -27,7 +28,8 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for BU-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
-| NA-03 Organizations: registration, approval, CRUD | Naser | Review | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents on the review screen wait for BU-03. |
+| NA-03 Organizations: registration, approval, CRUD | Naser | Review (merged) | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents on the review screen wait for BU-03. |
+| NA-04 Organization members and staff accounts | Naser | Review | Members panel on `/organizations/:id` (entity admins) and in the admin Manage panel |
 | All other cards (week 2-3) | | Backlog | |
 
 Week-1 review fixes merged on 2026-10-13:
@@ -99,4 +101,4 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 - Rate limiting on login and signup is planned for NA-06.
 - A wrong-password login still shows the API's 401 in the console. That is the failure path, not a page load.
 - NA-03's review screen shows no licence documents until BU-03 lands.
-- Members are added and removed in NA-04 (next). An admin-created organization starts with no members.
+- Entity admins can't reset a member's password (by design: a member may be a personal account). A forgotten staff password needs a platform-admin flow, not built yet; candidate for NA-06.

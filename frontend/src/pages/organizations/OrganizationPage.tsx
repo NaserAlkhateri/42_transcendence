@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { useAuth, type User } from '../../auth/auth-context'
+import { MembersPanel } from '../../components/MembersPanel'
 import { OrganizationFields } from '../../components/OrganizationFields'
 import { Alert, Badge, Button, Card, FormAlert, Spinner } from '../../components/ui'
 import { ApiError, errorMessage, http, serverFieldErrors } from '../../lib/api'
@@ -82,6 +83,11 @@ export function OrganizationPage() {
 
       {isEntityAdmin ? (
         <EditOrganization key={organization.updated_at} organization={organization} onSaved={setOrganization} />
+      ) : null}
+
+      {isEntityAdmin && organization.status === 'approved' ? <MembersPanel organizationId={organization.id} /> : null}
+      {isEntityAdmin && organization.status !== 'approved' ? (
+        <Alert variant="info">You can add your team once a platform admin approves this organisation.</Alert>
       ) : null}
     </section>
   )
