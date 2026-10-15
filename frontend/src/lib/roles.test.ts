@@ -80,6 +80,8 @@ describe('organisation links in the navigation', () => {
 
   it('gives platform admins the organisation admin page instead', () => {
     expect(labels(user('platform_admin'))).toContain('Organisations')
+    expect(labels(user('platform_admin'))).toContain('API keys')
+    expect(labels(user('entity_admin'))).not.toContain('API keys')
     expect(labels(user('platform_admin'))).not.toContain('Register a business')
     expect(labels(user('consumer'))).not.toContain('Organisations')
   })

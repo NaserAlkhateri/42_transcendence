@@ -16,6 +16,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default:
 const SignupPage = lazy(() => import('./pages/SignupPage').then((m) => ({ default: m.SignupPage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })))
+const AdminApiKeysPage = lazy(() => import('./pages/AdminApiKeysPage').then((m) => ({ default: m.AdminApiKeysPage })))
 const AdminOrganizationsPage = lazy(() => import('./pages/AdminOrganizationsPage').then((m) => ({ default: m.AdminOrganizationsPage })))
 const RegisterOrganizationPage = lazy(() => import('./pages/organizations/RegisterOrganizationPage').then((m) => ({ default: m.RegisterOrganizationPage })))
 const OrganizationPage = lazy(() => import('./pages/organizations/OrganizationPage').then((m) => ({ default: m.OrganizationPage })))
@@ -75,6 +76,10 @@ function AppRoutes() {
             <Route
               path="admin/organizations"
               element={<Lazy><RequireRole roles={['platform_admin']}><AdminOrganizationsPage /></RequireRole></Lazy>}
+            />
+            <Route
+              path="admin/api-keys"
+              element={<Lazy><RequireRole roles={['platform_admin']}><AdminApiKeysPage /></RequireRole></Lazy>}
             />
             <Route
               path="admin/users"

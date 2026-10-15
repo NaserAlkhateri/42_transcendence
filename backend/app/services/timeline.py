@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-from sqlalchemy import select
+from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from app.models import RecordCategory, ServiceRecord, Vehicle
@@ -37,3 +37,9 @@ def get_vehicle_timeline(db: Session, vin: str, filters: TimelineFilters) -> tup
     columns = (ServiceRecord.service_date, ServiceRecord.created_at, ServiceRecord.id)
     query = query.order_by(*(c.asc() if filters.order == "asc" else c.desc() for c in columns))
     return vehicle, list(db.scalars(query))
+
+
+def has_history(db: Session, vehicle: Vehicle) -> bool:
+    """A vehicle row can exist without records (someone watched the VIN first). Callers that mean "this VIN
+    has a history" check this rather than the row's existence."""
+    return bool(db.scalar(select(exists().where(ServiceRecord.vehicle_id == vehicle.id))))

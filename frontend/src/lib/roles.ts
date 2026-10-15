@@ -34,7 +34,11 @@ export function navItemsFor(user: User | null | undefined): NavItem[] {
     else items.push({ to: '/organizations/register', label: 'Register a business' })
   }
   if (hasRole(user, ['platform_admin'])) {
-    items.push({ to: '/admin/organizations', label: 'Organisations' }, { to: '/admin/users', label: 'Users' })
+    items.push(
+      { to: '/admin/organizations', label: 'Organisations' },
+      { to: '/admin/users', label: 'Users' },
+      { to: '/admin/api-keys', label: 'API keys' },
+    )
   }
   return items
 }
