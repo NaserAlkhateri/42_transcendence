@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useAuth, type User } from '../auth/auth-context'
 import { FormAlert, TextField, Button } from '../components/ui'
 import { api, errorMessage, serverFieldErrors } from '../lib/api'
+import { STATUS_LABELS } from '../lib/organizations'
 import { ROLE_LABELS } from '../lib/roles'
 import {
   PASSWORD_MAX_LENGTH,
@@ -36,9 +38,11 @@ export function ProfilePage({ user }: { user: User }) {
             <ul className="flex flex-col gap-1 text-sm">
               {user.memberships.map((membership) => (
                 <li key={membership.id} className="text-ink-800">
-                  {membership.organization_name} · {ROLE_LABELS[membership.role]}
+                  <Link className="text-brand-800 underline" to={`/organizations/${membership.organization_id}`}>
+                    {membership.organization_name}
+                  </Link>{' '}· {ROLE_LABELS[membership.role]}
                   {membership.organization_status !== 'approved' ? (
-                    <span className="text-warning-700"> · organization {membership.organization_status}</span>
+                    <span className="text-warning-700"> · {STATUS_LABELS[membership.organization_status].toLowerCase()}</span>
                   ) : null}
                   {membership.status === 'inactive' ? <span className="text-ink-500"> · inactive</span> : null}
                 </li>

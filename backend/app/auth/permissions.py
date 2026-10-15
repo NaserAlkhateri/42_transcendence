@@ -13,16 +13,21 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser
 from app.core.errors import ApiError
-from app.models import MemberRole, MemberStatus, OrganizationMember, User, UserRole
+from app.models import MemberRole, MemberStatus, Organization, OrganizationMember, OrganizationStatus, User, UserRole
 
 # Highest first: what the UI shows as a user's role when they hold several.
 EFFECTIVE_ROLES = ("platform_admin", "entity_admin", "entity_staff", "consumer")
 
 
-def effective_role(user: User, memberships: list[OrganizationMember]) -> str:
+def effective_role(user: User, memberships: list[tuple[OrganizationMember, Organization]]) -> str:
+    """Entity roles only count in an approved organization: a pending registrant is still a consumer in the UI
+    (no record tools), even though they can already manage their registration as its entity admin."""
     if user.role == UserRole.PLATFORM_ADMIN:
         return "platform_admin"
-    active = {m.role for m in memberships if m.status == MemberStatus.ACTIVE}
+    active = {
+        m.role for m, organization in memberships
+        if m.status == MemberStatus.ACTIVE and organization.status == OrganizationStatus.APPROVED
+    }
     if MemberRole.ENTITY_ADMIN in active:
         return "entity_admin"
     if MemberRole.ENTITY_STAFF in active:

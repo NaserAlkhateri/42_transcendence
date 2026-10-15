@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, CreatedAt, UUIDPrimaryKey
@@ -10,6 +10,8 @@ from app.models.enums import MemberRole, MemberStatus, OrganizationKind, Organiz
 
 class Organization(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "organizations"
+    # A rejection always tells the business why, so it can fix its details and resubmit.
+    __table_args__ = (CheckConstraint("(status = 'rejected') = (rejection_reason IS NOT NULL)", name="rejection_has_reason"),)
 
     name: Mapped[str] = mapped_column(String(200))
     kind: Mapped[OrganizationKind] = mapped_column(db_enum(OrganizationKind, "organization_kind"))
@@ -19,6 +21,8 @@ class Organization(UUIDPrimaryKey, CreatedAt, Base):
         db_enum(OrganizationStatus, "organization_status"), default=OrganizationStatus.PENDING, index=True
     )
     approved_at: Mapped[datetime | None]
+    reviewed_at: Mapped[datetime | None]  # last approve/reject decision by a platform admin
+    rejection_reason: Mapped[str | None] = mapped_column(String(500))
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
 

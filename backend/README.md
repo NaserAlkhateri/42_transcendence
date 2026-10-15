@@ -34,7 +34,7 @@ API docs: http://localhost:8000/api/v1/docs · health: http://localhost:8000/hea
 
 ## Roles and permissions (NA-02)
 
-Roles: `users.role` is `consumer` or `platform_admin`; `organization_members.role` is `entity_admin` or `entity_staff` per organization. `effective_role` (on `/me` and admin responses) is the highest of these and drives the UI's role-based views.
+Roles: `users.role` is `consumer` or `platform_admin`; `organization_members.role` is `entity_admin` or `entity_staff` per organization. `effective_role` (on `/me` and admin responses) is the highest of these and drives the UI's role-based views. Entity roles only count in an **approved** organization, so a pending registrant still shows as `consumer` (no record tools).
 
 Guards in `app.auth.permissions`, used on every protected route:
 - `PlatformAdmin`: dependency that only lets platform admins through.
@@ -49,6 +49,29 @@ Guards in `app.auth.permissions`, used on every protected route:
 | PATCH | `/api/v1/admin/users/{id}/memberships/{membership_id}` | Switch entity_admin / entity_staff |
 
 Admins cannot demote, disable or delete themselves, so at least one admin always remains. Every edit and delete writes an `audit_events` row.
+
+## Organizations (NA-03)
+
+A workshop or dealership registers and starts **pending**. A platform admin approves or rejects it, and a rejection always has a reason (a database check). Only approved organizations can add records (AG-03).
+
+| Method | Path | Who | Purpose |
+| --- | --- | --- | --- |
+| POST | `/api/v1/organizations` | Signed-in non-admin | Register: `name`, `kind`, `registration_number` (trade licence, stored upper-case, unique), `emirate`. The applicant becomes its entity admin. One pending registration per user. |
+| GET | `/api/v1/organizations/{id}` | Members | Details, status and rejection reason |
+| PATCH | `/api/v1/organizations/{id}` | Its entity admins | Edit details. The licence number is locked once approved (409 `registration_locked`). |
+| POST | `/api/v1/organizations/{id}/resubmit` | Its entity admins | Rejected -> pending again |
+| GET | `/api/v1/admin/organizations?q=&status=&kind=&emirate=&page=&page_size=` | Platform admin | Pending first; member and record counts |
+| GET | `/api/v1/admin/organizations/{id}` | Platform admin | Details with members |
+| POST | `/api/v1/admin/organizations` | Platform admin | Create; approved at once, no members |
+| PATCH | `/api/v1/admin/organizations/{id}` | Platform admin | Edit any field, including the licence number |
+| POST | `/api/v1/admin/organizations/{id}/approve` | Platform admin | Pending or rejected -> approved |
+| POST | `/api/v1/admin/organizations/{id}/reject` | Platform admin | `reason` (5-500 chars). Also withdraws an approval: records stop, history stays. |
+| DELETE | `/api/v1/admin/organizations/{id}` | Platform admin | Really delete it and its memberships. Member accounts stay; service records keep the organization-name snapshot. |
+
+- `emirate` must be one of the seven emirates, in official English spelling (`doc/UAE_MARKET.md`).
+- Approve and reject publish `organization.reviewed` (`organization_id`, `name`, `status`, `rejection_reason`) through `app/services/events.py`, for notifications (BU-05).
+- Every registration, edit, review, resubmission and deletion writes an `audit_events` row.
+- Licence documents (BU-03) are not shown on the review screen yet.
 
 ## Service records (AG-03)
 

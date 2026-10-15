@@ -16,6 +16,9 @@ const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default:
 const SignupPage = lazy(() => import('./pages/SignupPage').then((m) => ({ default: m.SignupPage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })))
+const AdminOrganizationsPage = lazy(() => import('./pages/AdminOrganizationsPage').then((m) => ({ default: m.AdminOrganizationsPage })))
+const RegisterOrganizationPage = lazy(() => import('./pages/organizations/RegisterOrganizationPage').then((m) => ({ default: m.RegisterOrganizationPage })))
+const OrganizationPage = lazy(() => import('./pages/organizations/OrganizationPage').then((m) => ({ default: m.OrganizationPage })))
 const VehicleTimelinePage = lazy(() => import('./pages/VehicleTimelinePage').then((m) => ({ default: m.VehicleTimelinePage })))
 const NewRecordPage = lazy(() => import('./pages/workshop/NewRecordPage').then((m) => ({ default: m.NewRecordPage })))
 const CorrectRecordPage = lazy(() => import('./pages/workshop/CorrectRecordPage').then((m) => ({ default: m.CorrectRecordPage })))
@@ -63,6 +66,15 @@ function AppRoutes() {
             <Route
               path="workshop/corrections"
               element={<Lazy><RequireRole roles={['entity_admin', 'entity_staff']}><CorrectRecordPage /></RequireRole></Lazy>}
+            />
+            <Route
+              path="organizations/register"
+              element={<Lazy><RequireAuth><RegisterOrganizationPage /></RequireAuth></Lazy>}
+            />
+            <Route path="organizations/:id" element={<Lazy><RequireAuth><OrganizationPage /></RequireAuth></Lazy>} />
+            <Route
+              path="admin/organizations"
+              element={<Lazy><RequireRole roles={['platform_admin']}><AdminOrganizationsPage /></RequireRole></Lazy>}
             />
             <Route
               path="admin/users"

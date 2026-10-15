@@ -11,7 +11,17 @@ from sqlalchemy.orm import Session
 from app.auth.permissions import PlatformAdmin
 from app.core.errors import ApiError
 from app.db.session import get_db
-from app.models import MemberRole, MemberStatus, OrganizationMember, User, UserRole, UserSession, UserStatus
+from app.models import (
+    MemberRole,
+    MemberStatus,
+    Organization,
+    OrganizationMember,
+    OrganizationStatus,
+    User,
+    UserRole,
+    UserSession,
+    UserStatus,
+)
 from app.schemas.auth import EffectiveRole
 from app.schemas.users import AdminUserOut, AdminUserUpdate, MembershipRoleUpdate, UserPage
 from app.services.audit import record_audit
@@ -23,10 +33,13 @@ DbSession = Annotated[Session, Depends(get_db)]
 
 
 def _has_active_membership(*roles: MemberRole):
+    """Active membership with one of `roles` in an approved organization (matches permissions.effective_role)."""
     return exists().where(
         OrganizationMember.user_id == User.id,
         OrganizationMember.status == MemberStatus.ACTIVE,
         OrganizationMember.role.in_(roles),
+        Organization.id == OrganizationMember.organization_id,
+        Organization.status == OrganizationStatus.APPROVED,
     )
 
 
