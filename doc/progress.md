@@ -1,6 +1,6 @@
 # Sijil - Progress
 
-Last updated: 2026-10-18 (week 2-3: NA-03 to NA-05 merged, NA-06 in Review).
+Last updated: 2026-10-18 (week 2-3: NA-03 to NA-05 merged, NA-06 and NA-07 in Review).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
@@ -9,10 +9,11 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 - **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
 - **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for BU-03.
+- **NA-07 Privacy Policy and Terms of Service are in Review** on `feat/na-07-legal-pages` (built on NA-06). Both pages have real Sijil-specific content in English and Arabic (with a language switch and right-to-left layout), are linked from the footer, and are linked where people agree to them (signup, business registration).
 - **NA-06 security hardening is in Review** on `feat/na-06-security`. It adds login, signup and password throttling, a new session after a password change, the last-platform-admin lock, platform-admin password resets, security headers, a 1 MB body limit and a cross-organization access test matrix. The full list, and what Caddy (BU-02), uploads (BU-03) and WebSockets (BU-04) must add, is in [`SECURITY.md`](SECURITY.md).
 - **NA-05 partner API is merged**: six key-authenticated endpoints at `/api/partner/v1` (vehicle summary and history, watchlist GET/POST/PUT/DELETE), admin-issued and revocable keys, per-key rate limiting with 429, and partner docs (`doc/PARTNER_API.md`, `/api/partner/v1/docs`). All eight Public API checklist items are ticked; it still needs a peer review and Naser's PO sign-off.
 - **NA-04 members and staff accounts is merged**: entity admins add and remove members, create staff accounts with a temporary password, and assign entity roles. With NA-03 + NA-04, all four Organization-system checklist items are ticked; the module still needs a peer review and Naser's PO sign-off.
-- On `main` (with NA-03): backend 172 tests, frontend 119 tests, lint and build clean. With NA-04: backend 186, frontend 125. With NA-05: backend 209, frontend 130. With NA-06: backend 229, frontend 136.
+- On `main` (with NA-03): backend 172 tests, frontend 119 tests, lint and build clean. With NA-04: backend 186, frontend 125. With NA-05: backend 209, frontend 130. With NA-06: backend 229, frontend 136. With NA-07: frontend 146.
 - **Module points earned so far: 0.** Checklists are ticked for Frameworks (HA-01 + AG-01), ORM (AG-01), Advanced permissions (NA-02) and Custom design system (HA-02); each still needs Naser's PO sign-off.
 
 ## Card status
@@ -34,6 +35,7 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | NA-04 Organization members and staff accounts | Naser | Review (merged) | Members panel on `/organizations/:id` (entity admins) and in the admin Manage panel |
 | NA-05 Partner API (keys, rate limit, docs) | Naser | Review (merged) | `/admin/api-keys` page; guide in `doc/PARTNER_API.md` |
 | NA-06 Security hardening and review | Naser | Review | `doc/SECURITY.md`; admin "Reset password" on `/admin/users` |
+| NA-07 Privacy Policy and Terms of Service | Naser | Review | `/privacy`, `/terms` (`?lang=ar` for Arabic); text in `frontend/src/pages/legal/` |
 | All other cards (week 2-3) | | Backlog | |
 
 Week-1 review fixes merged on 2026-10-13:
@@ -99,6 +101,7 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 - **Agegnew (AG-03 onward):** use `require_org_role` for record submission. Deleting a user leaves their service records in place, with `staff_id` set to NULL and the stored `staff_name` kept.
 - **Burhan (BU-03, BU-05):** registration and review are in place (NA-03). For BU-03, add the licence documents to `GET /api/v1/admin/organizations/{id}` and show them in the Manage panel on `/admin/organizations`; members upload from `/organizations/:id`. For BU-05, `organization.reviewed` is published on approve and reject (`organization_id`, `name`, `status`, `rejection_reason`).
 - **Hassan (HA-04):** the partner watchlist (`partner_watchlists`) is separate from the consumer one (`watchlists`). Watching a VIN with no history creates its `vehicles` row; the timeline still answers `vehicle: null` until the first record exists (`services/timeline.py:has_history`), so the page keeps offering Watch and hides the PDF button. Use the same helper if the consumer watch creates vehicles too.
+- **Everyone: keep the legal pages true.** The Privacy Policy already describes licence documents (BU-03), in-app notifications (BU-05) and VIN decoding through NHTSA vPIC (BU-09), as designed in ARCHITECTURE.md. If your card stores, shows or shares data differently, or adds browser storage (e.g. a language preference in HA-03), update `frontend/src/pages/legal/privacy.ts` / `terms.ts` and `LEGAL_UPDATED` in the same PR. Hassan: the Arabic text needs a native-speaker check in HA-03, and the pages' own language switch can hand over to the app-wide one.
 - **Entity roles need an approved organization:** since NA-03, `effective_role` only counts memberships of approved organizations. A pending registrant is `consumer` in the UI, but `require_org_role` still lets them manage their own registration.
 - **Seed and test emails:** the email validator rejects reserved domains such as `.test` and `.local`. The seed's `@sijil.demo` addresses are fine. In tests, use `@example.ae`.
 

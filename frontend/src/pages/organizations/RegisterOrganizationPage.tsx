@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth, type User } from '../../auth/auth-context'
+import { LegalNotice } from '../../components/LegalNotice'
 import { OrganizationFields } from '../../components/OrganizationFields'
 import { Alert, Button, Card, FormAlert } from '../../components/ui'
 import { errorMessage, http, serverFieldErrors } from '../../lib/api'
@@ -70,6 +71,7 @@ export function RegisterOrganizationPage() {
         <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
           <FormAlert message={alert} />
           <OrganizationFields form={form} errors={errors} onChange={setForm} />
+          <LegalNotice action="registering your business" />
           <Button type="submit" loading={busy}>Submit for review</Button>
         </form>
       </Card>

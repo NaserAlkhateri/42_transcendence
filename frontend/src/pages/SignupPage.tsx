@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import { LegalNotice } from '../components/LegalNotice'
 import { useAuth } from '../auth/auth-context'
 import { FormAlert, TextField, Button } from '../components/ui'
 import { errorMessage, serverFieldErrors } from '../lib/api'
@@ -53,6 +54,7 @@ export function SignupPage() {
           minLength={PASSWORD_MIN_LENGTH} maxLength={PASSWORD_MAX_LENGTH}
           hint={`At least ${PASSWORD_MIN_LENGTH} characters.`}
           value={form.password} onChange={update('password')} error={errors.password} />
+        <LegalNotice action="creating an account" />
         <Button type="submit" loading={busy}>Sign up</Button>
       </form>
       <p className="mt-4 text-sm text-ink-600">

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-import { buttonClass, Alert } from '../components/ui'
+import { buttonClass } from '../components/ui'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 export function NotFoundPage() {
@@ -13,17 +13,6 @@ export function NotFoundPage() {
       <Link to="/" className={buttonClass()}>
         Back to home
       </Link>
-    </section>
-  )
-}
-
-/** Placeholder for the legal pages until NA-07 delivers the real content. */
-export function PolicyPlaceholderPage({ title }: { title: string }) {
-  useDocumentTitle(title)
-  return (
-    <section className="mx-auto max-w-2xl">
-      <h1 className="mb-4">{title}</h1>
-      <Alert>This page is being written and will be published before release.</Alert>
     </section>
   )
 }
