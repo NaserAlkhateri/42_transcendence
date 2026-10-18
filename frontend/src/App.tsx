@@ -7,7 +7,7 @@ import { Spinner } from './components/ui'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { AppLayout } from './layouts/AppLayout'
 import { HomePage } from './pages/HomePage'
-import { NotFoundPage, PolicyPlaceholderPage } from './pages/NotFoundPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { RequireAuth, RequireGuest, RequireRole } from './routes/guards'
 
 // Pages behind a sign-in are split into their own chunks so the first load stays small.
@@ -20,6 +20,8 @@ const AdminApiKeysPage = lazy(() => import('./pages/AdminApiKeysPage').then((m) 
 const AdminOrganizationsPage = lazy(() => import('./pages/AdminOrganizationsPage').then((m) => ({ default: m.AdminOrganizationsPage })))
 const RegisterOrganizationPage = lazy(() => import('./pages/organizations/RegisterOrganizationPage').then((m) => ({ default: m.RegisterOrganizationPage })))
 const OrganizationPage = lazy(() => import('./pages/organizations/OrganizationPage').then((m) => ({ default: m.OrganizationPage })))
+const PrivacyPolicyPage = lazy(() => import('./pages/legal/LegalPages').then((m) => ({ default: m.PrivacyPolicyPage })))
+const TermsOfServicePage = lazy(() => import('./pages/legal/LegalPages').then((m) => ({ default: m.TermsOfServicePage })))
 const VehicleTimelinePage = lazy(() => import('./pages/VehicleTimelinePage').then((m) => ({ default: m.VehicleTimelinePage })))
 const NewRecordPage = lazy(() => import('./pages/workshop/NewRecordPage').then((m) => ({ default: m.NewRecordPage })))
 const CorrectRecordPage = lazy(() => import('./pages/workshop/CorrectRecordPage').then((m) => ({ default: m.CorrectRecordPage })))
@@ -85,8 +87,8 @@ function AppRoutes() {
               path="admin/users"
               element={<Lazy><RequireRole roles={['platform_admin']}><AdminUsersPage /></RequireRole></Lazy>}
             />
-            <Route path="privacy" element={<PolicyPlaceholderPage title="Privacy Policy" />} />
-            <Route path="terms" element={<PolicyPlaceholderPage title="Terms of Service" />} />
+            <Route path="privacy" element={<Lazy><PrivacyPolicyPage /></Lazy>} />
+            <Route path="terms" element={<Lazy><TermsOfServicePage /></Lazy>} />
             <Route path="*" element={<NotFoundPage />} />
           </>
         )}
