@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../auth/auth-context'
 import { FormAlert, TextField, Button } from '../components/ui'
-import { errorMessage } from '../lib/api'
+import { errorMessage, serverFieldErrors } from '../lib/api'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { safeRedirect } from '../lib/redirect'
 import { validateLogin, type FieldErrors } from '../lib/validation'
@@ -33,6 +33,7 @@ export function LoginPage() {
       await login({ email: form.email.trim(), password: form.password })
       navigate(redirectTo, { replace: true })
     } catch (error) {
+      setErrors(serverFieldErrors(error, { email: 'email', password: 'password' }))
       setAlert(errorMessage(error))
     } finally {
       setBusy(false)

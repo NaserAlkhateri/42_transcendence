@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     partner_rate_limit: int = 60  # partner API requests per key per window (NA-05)
     partner_rate_window_seconds: int = 60
     partner_max_watches: int = 500  # VINs one partner key may watch
+    # Authentication throttling (NA-06). Behind Caddy, run uvicorn with --proxy-headers so limits see the real client IP.
+    login_attempts_per_ip: int = 30  # per login_window_seconds, successful or not
+    login_failures_per_email: int = 10  # wrong passwords for one email before it is locked for the window
+    login_window_seconds: int = 900
+    signups_per_ip: int = 10  # per hour
+    password_failures_per_user: int = 10  # wrong current passwords on /me/password, per login_window_seconds
+    max_request_bytes: int = 1_000_000  # JSON API bodies; file uploads (BU-03) need their own, larger limit
 
 
 @lru_cache

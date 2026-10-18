@@ -1,5 +1,6 @@
 """Platform-admin user management (Advanced permissions module): view, edit, delete users and manage roles."""
 
+import secrets
 import uuid
 from typing import Annotated
 
@@ -8,7 +9,9 @@ from sqlalchemy import and_, delete, exists, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.auth.passwords import hash_password
 from app.auth.permissions import PlatformAdmin
+from app.auth.sessions import revoke_all_sessions
 from app.core.errors import ApiError
 from app.db.session import get_db
 from app.models import (
@@ -23,10 +26,10 @@ from app.models import (
     UserStatus,
 )
 from app.schemas.auth import EffectiveRole
-from app.schemas.users import AdminUserOut, AdminUserUpdate, MembershipRoleUpdate, UserPage
+from app.schemas.users import AdminUserOut, AdminUserUpdate, MembershipRoleUpdate, PasswordReset, UserPage
 from app.services.audit import record_audit
 from app.services.organizations import require_another_admin
-from app.services.users import to_admin_user_outs
+from app.services.users import memberships_by_user, to_admin_user_outs
 
 router = APIRouter(prefix="/admin/users", tags=["admin: users"])
 
@@ -58,6 +61,20 @@ def _role_filter(role: EffectiveRole):
             ~_has_active_membership(MemberRole.ENTITY_ADMIN),
         )
     return and_(is_consumer_account, ~_has_active_membership(MemberRole.ENTITY_ADMIN, MemberRole.ENTITY_STAFF))
+
+
+def _require_another_platform_admin(db: Session, user: User) -> None:
+    """There is always at least one active platform admin. All active admin rows are locked first, so two
+    admins demoting, disabling or deleting each other at the same moment are serialized and the second is
+    refused. `user` is refreshed under the lock, so the decision uses its committed state."""
+    active_admins = db.scalars(
+        select(User.id)
+        .where(User.role == UserRole.PLATFORM_ADMIN, User.status == UserStatus.ACTIVE)
+        .with_for_update()
+    ).all()
+    db.refresh(user)
+    if user.id in active_admins and len(active_admins) <= 1:
+        raise ApiError(409, "last_platform_admin", "Sijil needs at least one active platform admin.")
 
 
 def _get_user(db: Session, user_id: uuid.UUID) -> User:
@@ -112,6 +129,8 @@ def update_user(user_id: uuid.UUID, body: AdminUserUpdate, admin: PlatformAdmin,
     ):
         # Keeps at least one working platform admin and stops an accidental self-lockout.
         raise ApiError(409, "cannot_demote_self", "You cannot remove your own admin role or disable yourself.")
+    if (body.role is not None and body.role != UserRole.PLATFORM_ADMIN) or body.status == UserStatus.DISABLED:
+        _require_another_platform_admin(db, user)
 
     changes: dict[str, list] = {}
     for field in ("email", "full_name", "role", "status"):
@@ -147,13 +166,36 @@ def delete_user(user_id: uuid.UUID, admin: PlatformAdmin, db: DbSession) -> None
     user = _get_user(db, user_id)
     if user.id == admin.id:
         raise ApiError(409, "cannot_delete_self", "You cannot delete your own account.")
+    if user.role == UserRole.PLATFORM_ADMIN:
+        _require_another_platform_admin(db, user)
+    memberships = [
+        {"organization_id": str(org.id), "organization_name": org.name, "role": str(m.role), "status": str(m.status)}
+        for m, org in memberships_by_user(db, [user.id])[user.id]
+    ]
     record_audit(
         db, admin, "user.deleted", "user", user.id,
-        {"email": user.email, "full_name": user.full_name, "role": str(user.role)},
+        {"email": user.email, "full_name": user.full_name, "role": str(user.role), "memberships": memberships},
     )
     db.expunge(user)
     db.execute(delete(User).where(User.id == user_id))
     db.commit()
+
+
+@router.post("/{user_id}/reset-password", response_model=PasswordReset)
+def reset_password(user_id: uuid.UUID, admin: PlatformAdmin, db: DbSession) -> PasswordReset:
+    """Give a locked-out user a temporary password (there is no email reset). It is returned once, every
+    session is ended, and the user must replace it before doing anything else. Only platform admins can do
+    this: an entity admin could otherwise take over a member's personal account."""
+    user = _get_user(db, user_id)
+    if user.id == admin.id:
+        raise ApiError(409, "cannot_reset_self", "Change your own password from your profile.")
+    temporary_password = secrets.token_urlsafe(12)
+    user.password_hash = hash_password(temporary_password)
+    user.must_change_password = True
+    revoke_all_sessions(db, user.id)
+    record_audit(db, admin, "user.password_reset", "user", user.id, {"email": user.email})
+    db.commit()
+    return PasswordReset(temporary_password=temporary_password)
 
 
 @router.patch("/{user_id}/memberships/{membership_id}", response_model=AdminUserOut)

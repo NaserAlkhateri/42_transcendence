@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 
 import { useAuth, type EffectiveRole, type MemberRole, type Membership, type PlatformRole, type User } from '../auth/auth-context'
-import { FormAlert, TextField, Button, Badge, Select, Table, Pagination } from '../components/ui'
-import { api, errorMessage, serverFieldErrors } from '../lib/api'
+import { Alert, FormAlert, TextField, Button, Badge, Modal, Select, Table, Pagination } from '../components/ui'
+import { api, errorMessage, http, serverFieldErrors } from '../lib/api'
 import { MEMBER_ROLES, PLATFORM_ROLES, ROLE_LABELS } from '../lib/roles'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { validateEmail, validateFullName, type FieldErrors } from '../lib/validation'
@@ -45,7 +45,13 @@ export function AdminUsersPage() {
     if (filters.role) params.set('role', filters.role)
     if (filters.status) params.set('status', filters.status)
     try {
-      setData(await api<UserPage>(`/admin/users?${params}`))
+      const result = await api<UserPage>(`/admin/users?${params}`)
+      const lastPage = Math.max(1, Math.ceil(result.total / result.page_size))
+      if (page > lastPage) {
+        setPage(lastPage)  // e.g. the only user on the last page was deleted: show the new last page
+        return
+      }
+      setData(result)
       setLoadError(undefined)
     } catch (error) {
       setLoadError(errorMessage(error))
@@ -193,13 +199,58 @@ function ManageUser({ user, isSelf, onClose, onChanged }: {
       ) : null}
 
       {isSelf ? null : (
-        <div className="mt-6 border-t border-ink-200 pt-4">
-          <Button variant="danger" onClick={() => void onDelete()}>
-            Delete user
-          </Button>
+        <div className="mt-6 flex flex-col gap-4 border-t border-ink-200 pt-4">
+          <ResetPassword user={user} onError={setAlert} />
+          <div>
+            <Button variant="danger" onClick={() => void onDelete()}>
+              Delete user
+            </Button>
+          </div>
         </div>
       )}
     </section>
+  )
+}
+
+/** Platform admins give a locked-out user a temporary password (there is no email reset). */
+function ResetPassword({ user, onError }: { user: AdminUser; onError: (message: string) => void }) {
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [temporary, setTemporary] = useState<string>()
+
+  async function reset() {
+    setBusy(true)
+    try {
+      setTemporary((await http.post<{ temporary_password: string }>(`/admin/users/${user.id}/reset-password`)).temporary_password)
+    } catch (error) {
+      onError(errorMessage(error))
+    } finally {
+      setBusy(false)
+      setConfirming(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {temporary ? (
+        <Alert variant="success" title={`Temporary password for ${user.email}`} onDismiss={() => setTemporary(undefined)}>
+          <p>Give it to them in person. It is shown only once; they must choose their own password when they sign in.</p>
+          <p className="mt-2 font-mono select-all" data-testid="reset-temporary-password">{temporary}</p>
+        </Alert>
+      ) : null}
+      <div>
+        <Button variant="secondary" onClick={() => setConfirming(true)}>Reset password</Button>
+      </div>
+      <Modal open={confirming} title={`Reset the password of ${user.full_name}?`} onClose={() => setConfirming(false)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirming(false)}>Cancel</Button>
+            <Button loading={busy} onClick={() => void reset()}>Reset password</Button>
+          </>
+        }>
+        <p>They are signed out everywhere and get a temporary password, which you will see once.</p>
+      </Modal>
+    </div>
   )
 }
 

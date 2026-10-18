@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse
 from app.api import health, partner
 from app.api.v1.router import api_router
 from app.core.errors import install_error_handlers
+from app.core.security import install_security
 
 API_PREFIX = "/api/v1"
 
@@ -32,6 +33,7 @@ def create_app() -> FastAPI:
         openapi_url=f"{API_PREFIX}/openapi.json",
     )
     install_error_handlers(app)
+    install_security(app)
     app.include_router(health.router)
     app.include_router(api_router, prefix=API_PREFIX)
     # Key-authenticated, no cookies: deliberately outside api_router and its CSRF check.

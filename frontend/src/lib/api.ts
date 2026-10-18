@@ -47,6 +47,14 @@ export function setUnauthorizedHandler(handler: (() => void) | undefined): void 
   onUnauthorized = handler
 }
 
+let onForbidden: (() => void) | undefined
+
+/** Register the callback run when the API answers 403 `forbidden`: the user's role may have changed since
+ * the page loaded (e.g. an admin was demoted), so the auth provider re-reads the session. */
+export function setForbiddenHandler(handler: (() => void) | undefined): void {
+  onForbidden = handler
+}
+
 /** Map backend 422 details (loc: ["body", "full_name"]) onto form field keys. */
 export function serverFieldErrors<K extends string>(error: unknown, fields: Record<string, K>): Partial<Record<K, string>> {
   if (!(error instanceof ApiError)) return {}
@@ -59,7 +67,13 @@ export function serverFieldErrors<K extends string>(error: unknown, fields: Reco
 }
 
 export function errorMessage(error: unknown): string {
-  return error instanceof ApiError ? error.message : 'Could not reach the server. Please try again.'
+  if (!(error instanceof ApiError)) return 'Could not reach the server. Please try again.'
+  if (error.code === 'validation_error') {
+    // "Request validation failed" means nothing to a user; say what was wrong instead.
+    const first = error.details[0]?.message
+    return first ? `Please check your details: ${first.replace(/^Value error, /, '')}` : 'Please check your details and try again.'
+  }
+  return error.message
 }
 
 function readCookie(name: string): string | undefined {
@@ -136,6 +150,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   if (!response.ok) {
     if (response.status === 401 && !options.silent401) onUnauthorized?.()
     const error = (payload as { error?: { code: string; message: string; details?: FieldIssue[] } } | null)?.error
+    if (response.status === 403 && error?.code === 'forbidden') onForbidden?.()
     throw new ApiError(
       response.status,
       error?.code ?? 'http_error',

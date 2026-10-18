@@ -29,3 +29,7 @@ class AdminUserUpdate(BaseModel):
 
 class MembershipRoleUpdate(BaseModel):
     role: MemberRole
+
+
+class PasswordReset(BaseModel):
+    temporary_password: str  # shown once; the user must replace it at next sign-in
