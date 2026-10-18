@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.main import create_app
+from app.services.rate_limit import auth_limiter
 
 BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -72,3 +73,11 @@ def client(app: FastAPI) -> Iterator[TestClient]:
     # https so the client sends back the Secure session/CSRF cookies, as browsers do behind Caddy
     with TestClient(app, base_url="https://testserver") as test_client:
         yield test_client
+
+
+@pytest.fixture(autouse=True)
+def fresh_auth_limits() -> Iterator[None]:
+    """Every test client shares one address, so throttling counters must not leak between tests."""
+    auth_limiter.reset()
+    yield
+    auth_limiter.reset()

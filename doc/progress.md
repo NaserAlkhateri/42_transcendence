@@ -1,6 +1,6 @@
 # Sijil - Progress
 
-Last updated: 2026-10-15 (week 2: Agegnew's cards done, NA-03 and NA-04 merged, NA-05 in Review). Update this file when a card moves to Review or Done.
+Last updated: 2026-10-18 (week 2-3: NA-03 to NA-05 merged, NA-06 in Review).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
@@ -9,9 +9,10 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 - **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
 - **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for BU-03.
-- **NA-05 partner API is in Review** on `feat/na-05-partner-api`: six key-authenticated endpoints at `/api/partner/v1` (vehicle summary and history, watchlist GET/POST/PUT/DELETE), admin-issued and revocable keys, per-key rate limiting with 429, and partner docs (`doc/PARTNER_API.md`, `/api/partner/v1/docs`). All eight Public API checklist items are ticked; it still needs a peer review and Naser's PO sign-off.
+- **NA-06 security hardening is in Review** on `feat/na-06-security`. It adds login, signup and password throttling, a new session after a password change, the last-platform-admin lock, platform-admin password resets, security headers, a 1 MB body limit and a cross-organization access test matrix. The full list, and what Caddy (BU-02), uploads (BU-03) and WebSockets (BU-04) must add, is in [`SECURITY.md`](SECURITY.md).
+- **NA-05 partner API is merged**: six key-authenticated endpoints at `/api/partner/v1` (vehicle summary and history, watchlist GET/POST/PUT/DELETE), admin-issued and revocable keys, per-key rate limiting with 429, and partner docs (`doc/PARTNER_API.md`, `/api/partner/v1/docs`). All eight Public API checklist items are ticked; it still needs a peer review and Naser's PO sign-off.
 - **NA-04 members and staff accounts is merged**: entity admins add and remove members, create staff accounts with a temporary password, and assign entity roles. With NA-03 + NA-04, all four Organization-system checklist items are ticked; the module still needs a peer review and Naser's PO sign-off.
-- On `main` (with NA-03): backend 172 tests, frontend 119 tests, lint and build clean. With NA-04: backend 186, frontend 125. With NA-05: backend 208, frontend 130.
+- On `main` (with NA-03): backend 172 tests, frontend 119 tests, lint and build clean. With NA-04: backend 186, frontend 125. With NA-05: backend 209, frontend 130. With NA-06: backend 229, frontend 136.
 - **Module points earned so far: 0.** Checklists are ticked for Frameworks (HA-01 + AG-01), ORM (AG-01), Advanced permissions (NA-02) and Custom design system (HA-02); each still needs Naser's PO sign-off.
 
 ## Card status
@@ -31,7 +32,8 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
 | NA-03 Organizations: registration, approval, CRUD | Naser | Review (merged) | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents on the review screen wait for BU-03. |
 | NA-04 Organization members and staff accounts | Naser | Review (merged) | Members panel on `/organizations/:id` (entity admins) and in the admin Manage panel |
-| NA-05 Partner API (keys, rate limit, docs) | Naser | Review | `/admin/api-keys` page; guide in `doc/PARTNER_API.md` |
+| NA-05 Partner API (keys, rate limit, docs) | Naser | Review (merged) | `/admin/api-keys` page; guide in `doc/PARTNER_API.md` |
+| NA-06 Security hardening and review | Naser | Review | `doc/SECURITY.md`; admin "Reset password" on `/admin/users` |
 | All other cards (week 2-3) | | Backlog | |
 
 Week-1 review fixes merged on 2026-10-13:
@@ -101,7 +103,7 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 - **Seed and test emails:** the email validator rejects reserved domains such as `.test` and `.local`. The seed's `@sijil.demo` addresses are fine. In tests, use `@example.ae`.
 
 ## Open items
-- Rate limiting on login and signup is planned for NA-06.
+- Burhan: when wiring Caddy (BU-02), run uvicorn with `--proxy-headers` so per-IP limits see real clients (doc/SECURITY.md).
 - A wrong-password login still shows the API's 401 in the console. That is the failure path, not a page load.
 - NA-03's review screen shows no licence documents until BU-03 lands.
-- Entity admins can't reset a member's password (by design: a member may be a personal account). A forgotten staff password needs a platform-admin flow, not built yet; candidate for NA-06.
+- Entity admins can't reset a member's password (by design). Platform admins can, from `/admin/users` (NA-06).

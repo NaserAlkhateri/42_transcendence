@@ -53,10 +53,9 @@ def revoke_session(db: Session, token: str) -> None:
     )
 
 
-def revoke_other_sessions(db: Session, user_id: uuid.UUID, keep_session_id: uuid.UUID) -> None:
+def revoke_all_sessions(db: Session, user_id: uuid.UUID) -> None:
     db.execute(
         update(UserSession)
-        .where(UserSession.user_id == user_id, UserSession.id != keep_session_id, UserSession.revoked_at.is_(None))
+        .where(UserSession.user_id == user_id, UserSession.revoked_at.is_(None))
         .values(revoked_at=_now())
     )
-

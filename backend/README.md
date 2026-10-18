@@ -32,6 +32,10 @@ API docs: http://localhost:8000/api/v1/docs · health: http://localhost:8000/hea
 | GET / PATCH | `/api/v1/me` | Read / update own profile |
 | POST | `/api/v1/me/password` | Change password (signs out other devices) |
 
+Security measures (throttling, session rotation, headers, what Caddy must add) are listed in [`doc/SECURITY.md`](../doc/SECURITY.md).
+
+- `POST /api/v1/admin/users/{id}/reset-password` (platform admin): gives a locked-out user a one-time temporary password and ends their sessions.
+
 ## Roles and permissions (NA-02)
 
 Roles: `users.role` is `consumer` or `platform_admin`; `organization_members.role` is `entity_admin` or `entity_staff` per organization. `effective_role` (on `/me` and admin responses) is the highest of these and drives the UI's role-based views. Entity roles only count in an **approved** organization, so a pending registrant still shows as `consumer` (no record tools).

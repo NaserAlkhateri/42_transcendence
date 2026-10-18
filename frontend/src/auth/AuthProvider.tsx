@@ -1,7 +1,7 @@
 import { startTransition, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { http, setUnauthorizedHandler } from '../lib/api'
+import { http, setForbiddenHandler, setUnauthorizedHandler } from '../lib/api'
 import { AuthContext, type AuthState, type User } from './auth-context'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -31,6 +31,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
     })
     return () => setUnauthorizedHandler(undefined)
+  }, [])
+
+  // A 403 can mean the role changed under us (demoted, membership removed): re-read the session so the
+  // navigation and route guards match what the server now allows. One refresh at a time.
+  useEffect(() => {
+    let refreshing = false
+    setForbiddenHandler(() => {
+      if (refreshing) return
+      refreshing = true
+      http
+        .get<{ user: User | null }>('/auth/session', { silent401: true })
+        // Keep the same object when nothing changed, so pages that depend on `user` don't refetch and loop.
+        .then((session) => setUser((current) => (JSON.stringify(current) === JSON.stringify(session.user) ? current : session.user)))
+        .catch(() => {})
+        .finally(() => { refreshing = false })
+    })
+    return () => setForbiddenHandler(undefined)
   }, [])
 
   const signup = useCallback<AuthState['signup']>(async (input) => {
