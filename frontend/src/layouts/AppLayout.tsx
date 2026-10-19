@@ -53,7 +53,8 @@ function Header() {
   const links = user ? (
     <>
       {items.map((item) => (
-        <NavLink key={item.to} to={item.to} className={navLinkClass}>
+        // `end`: /workshop/records must not look active on /workshop/records/new.
+        <NavLink key={item.to} to={item.to} end className={navLinkClass}>
           {item.label}
         </NavLink>
       ))}

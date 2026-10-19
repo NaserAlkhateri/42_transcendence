@@ -25,7 +25,11 @@ export function navItemsFor(user: User | null | undefined): NavItem[] {
   if (!user) return []
   const items: NavItem[] = [{ to: '/profile', label: 'Profile' }]
   if (hasRole(user, ['entity_admin', 'entity_staff'])) {
-    items.push({ to: '/workshop/records/new', label: 'Add record' }, { to: '/workshop/corrections', label: 'Correct a record' })
+    items.push(
+      { to: '/workshop/records/new', label: 'Add record' },
+      { to: '/workshop/corrections', label: 'Correct a record' },
+      { to: '/workshop/records', label: 'Search records' },
+    )
   }
   if (!user.must_change_password && user.role !== 'platform_admin') {
     // Any active membership, approved or not, so a pending registrant can follow their review.
@@ -37,6 +41,7 @@ export function navItemsFor(user: User | null | undefined): NavItem[] {
     items.push(
       { to: '/admin/organizations', label: 'Organisations' },
       { to: '/admin/users', label: 'Users' },
+      { to: '/admin/records', label: 'Records' },
       { to: '/admin/api-keys', label: 'API keys' },
     )
   }
