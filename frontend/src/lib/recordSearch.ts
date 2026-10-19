@@ -101,6 +101,13 @@ function yesNo(value: string | null): YesNo {
   return value === 'true' || value === 'false' ? value : ''
 }
 
+/** A real calendar day as YYYY-MM-DD: the only value a date input can hold (not 2026-02-31). */
+function isRealDate(value: string): boolean {
+  if (!ISO_DATE.test(value) || value.startsWith('0000')) return false
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+}
+
 function pageNumber(value: string | null): number {
   const page = value && DIGITS.test(value) ? Number(value) : 1
   return page >= 1 ? Math.min(page, MAX_PAGE) : 1
@@ -116,7 +123,7 @@ export function searchFromParams(params: URLSearchParams, scope: SearchScope): S
   }
   for (const key of Object.keys(DATE_PARAMS) as DateKey[]) {
     const value = params.get(DATE_PARAMS[key]) ?? ''
-    filters[key] = ISO_DATE.test(value) ? value : ''
+    filters[key] = isRealDate(value) ? value : ''
   }
   const category = params.get('category')
   filters.category = category === 'maintenance' || category === 'repair' ? category : ''
@@ -255,5 +262,6 @@ const count = new Intl.NumberFormat('en-GB')
 export function describeRange(page: number, pageSize: number, total: number, shown: number): string {
   if (total === 1) return 'Showing 1 of 1 record'
   const first = (page - 1) * pageSize + 1
+  if (shown === 1) return `Showing ${count.format(first)} of ${count.format(total)} records`
   return `Showing ${count.format(first)}–${count.format(first + shown - 1)} of ${count.format(total)} records`
 }

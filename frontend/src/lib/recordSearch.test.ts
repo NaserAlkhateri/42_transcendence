@@ -60,6 +60,10 @@ describe('searchFromParams / searchToParams', () => {
         '&year_from=20x&odometer_min=1.5&date_from=11/04/2026',
     )
     expect(searchFromParams(params, 'admin')).toEqual(DEFAULTS)
+    // Well-formed but impossible calendar dates: a date input could never hold them.
+    expect(searchFromParams(new URLSearchParams('date_from=2026-02-31&date_to=2026-13-45'), 'admin')).toEqual(DEFAULTS)
+    expect(searchFromParams(new URLSearchParams('date_from=2026-02-29'), 'admin')).toEqual(DEFAULTS)
+    expect(searchFromParams(new URLSearchParams('date_from=2028-02-29'), 'admin').filters.dateFrom).toBe('2028-02-29')
   })
 
   it('caps the page at the API limit and drops repeated work codes', () => {
@@ -166,5 +170,6 @@ describe('describeRange', () => {
     expect(describeRange(7, 20, 132, 12)).toBe('Showing 121–132 of 132 records')
     expect(describeRange(1, 100, 1320, 100)).toBe('Showing 1–100 of 1,320 records')
     expect(describeRange(1, 20, 1, 1)).toBe('Showing 1 of 1 record')
+    expect(describeRange(2, 20, 21, 1)).toBe('Showing 21 of 21 records') // a last page with one row
   })
 })
