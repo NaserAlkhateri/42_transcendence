@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 
 import { useAuth, type Membership } from '../auth/auth-context'
@@ -17,11 +17,13 @@ import {
   type TableColumn,
 } from '../components/ui'
 import { errorMessage, http } from '../lib/api'
+import { downloadFile } from '../lib/download'
 import { submittingOrganizations } from '../lib/records'
 import {
   EMPTY_FILTERS,
   PAGE_SIZES,
   describeRange,
+  exportApiPath,
   hasActiveFilters,
   nextSort,
   normalizeFilters,
@@ -29,6 +31,7 @@ import {
   searchFromParams,
   searchToParams,
   validateFilters,
+  type ExportFormat,
   type RecordSearchItem,
   type RecordSearchResults,
   type SearchField,
@@ -45,8 +48,11 @@ import { AwaitingApproval, OrganizationPicker } from './workshop/NewRecordPage'
 
 // Which of the user's organisations to search, when they belong to more than one.
 const ORGANIZATION_PARAM = 'org'
+// An export of up to 5,000 records is built before the first byte arrives: allow more than the usual 15 s.
+const EXPORT_TIMEOUT_MS = 60_000
 
-/** /workshop/records (scope "organization") and /admin/records (scope "admin"): advanced record search (AG-06). */
+/** /workshop/records (scope "organization") and /admin/records (scope "admin"): advanced record search (AG-06)
+ *  with CSV/JSON export of the whole search or of selected rows (AG-07). */
 export function RecordSearchPage({ scope }: { scope: SearchScope }) {
   const admin = scope === 'admin'
   const title = admin ? 'Records' : 'Search records'
@@ -108,6 +114,28 @@ function RecordSearch({ scope, organizations }: { scope: SearchScope; organizati
   const current = result?.key === requestKey ? result : undefined
   const loading = !!requestKey && !current
 
+  // Selected rows and export errors belong to one result set: a new search, sort or page starts empty.
+  const [selection, setSelection] = useState<{ key: string; ids: string[] }>()
+  const selectedIds = selection && selection.key === requestKey ? selection.ids : []
+  const [exporting, setExporting] = useState<string>()
+  const [exportError, setExportError] = useState<{ key: string; message: string }>()
+
+  async function exportRecords(format: ExportFormat, ids: string[] = []) {
+    const key = requestKey ?? ''
+    setExporting(`${ids.length > 0 ? 'selected' : 'all'}:${format}`)
+    setExportError(undefined)
+    try {
+      await downloadFile(exportApiPath(scope, search, format, organizationId, ids), {
+        fallbackName: `sijil-records.${format}`,
+        timeoutMs: EXPORT_TIMEOUT_MS,
+      })
+    } catch (error) {
+      setExportError({ key, message: errorMessage(error) })
+    } finally {
+      setExporting(undefined)
+    }
+  }
+
   function paramsFor(next: Partial<SearchState>, organization = organizationId): URLSearchParams {
     const params = searchToParams({ ...search, ...next }, scope)
     if (organization && organizations.length > 1 && organization !== organizations[0].organization_id) {
@@ -156,12 +184,27 @@ function RecordSearch({ scope, organizations }: { scope: SearchScope; organizati
       />
     )
   } else {
+    const exportBusy = exporting !== undefined
     results = (
       <ResultsTable
         scope={scope}
         search={search}
         data={shown.data}
         loading={loading}
+        selected={selectedIds}
+        onSelect={(ids) => requestKey && setSelection({ key: requestKey, ids })}
+        actions={
+          <ExportBar
+            selected={selectedIds.length}
+            exporting={exporting}
+            disabled={exportBusy || loading}
+            error={exportError && exportError.key === requestKey ? exportError.message : undefined}
+            onDismissError={() => setExportError(undefined)}
+            onExport={(format) => void exportRecords(format)}
+            onExportSelected={(format) => void exportRecords(format, selectedIds)}
+            onClearSelection={() => setSelection(undefined)}
+          />
+        }
         onSort={(key) => go({ ...nextSort(search, key), page: 1 })}
         onPage={(page) => go({ page })}
         onPageSize={(pageSize) => go({ pageSize, page: 1 })}
@@ -312,16 +355,24 @@ function SearchForm({ scope, applied, appliedErrors, onSearch, onClear }: {
   )
 }
 
-function ResultsTable({ scope, search, data, loading, onSort, onPage, onPageSize }: {
+function ResultsTable({ scope, search, data, loading, selected, onSelect, actions, onSort, onPage, onPageSize }: {
   scope: SearchScope
   search: SearchState
   data: RecordSearchResults
   loading: boolean
+  /** Ids of the selected rows on this page. */
+  selected: string[]
+  onSelect: (ids: string[]) => void
+  actions: ReactNode
   onSort: (key: SortKey) => void
   onPage: (page: number) => void
   onPageSize: (pageSize: number) => void
 }) {
   const { label } = useWorkCodes()
+  const pageIds = data.items.map((r) => r.id)
+  const selectedOnPage = pageIds.filter((id) => selected.includes(id)).length
+  const toggle = (id: string, checked: boolean) =>
+    onSelect(checked ? [...selected, id] : selected.filter((item) => item !== id))
 
   function sortable(key: SortKey, text: string): Pick<TableColumn<RecordSearchItem>, 'header' | 'sort'> {
     const active = search.sort === key
@@ -340,6 +391,19 @@ function ResultsTable({ scope, search, data, loading, onSort, onPage, onPageSize
   }
 
   const columns: TableColumn<RecordSearchItem>[] = [
+    {
+      key: 'select',
+      header: (
+        <SelectBox label="Select all records on this page" disabled={loading}
+          checked={pageIds.length > 0 && selectedOnPage === pageIds.length}
+          indeterminate={selectedOnPage > 0 && selectedOnPage < pageIds.length}
+          onChange={(checked) => onSelect(checked ? pageIds : [])} />
+      ),
+      render: (r) => (
+        <SelectBox label={`Select the record for ${r.vin}, ${formatTableDate(r.service_date)}, ${formatOdometer(r.odometer_km)}`}
+          disabled={loading} checked={selected.includes(r.id)} onChange={(checked) => toggle(r.id, checked)} />
+      ),
+    },
     {
       key: 'service_date', ...sortable('service_date', 'Service date'),
       render: (r) => <time dateTime={r.service_date} className="whitespace-nowrap">{formatTableDate(r.service_date)}</time>,
@@ -395,11 +459,74 @@ function ResultsTable({ scope, search, data, loading, onSort, onPage, onPageSize
           options={PAGE_SIZES.map((size) => ({ value: String(size), label: String(size) }))}
           onChange={(event) => onPageSize(Number(event.target.value))} />
       </div>
+      {actions}
       <div aria-busy={loading || undefined} className={loading ? 'opacity-60' : undefined}>
         <Table<RecordSearchItem> caption="Service records matching the filters" rows={data.items} rowKey={(r) => r.id}
           columns={columns} />
       </div>
       <Pagination total={data.total} pageSize={data.page_size} page={data.page} onPageChange={onPage} />
+    </div>
+  )
+}
+
+/** A table checkbox; the visible column needs no text, so the label is for screen readers only. */
+function SelectBox({ label, checked, indeterminate = false, disabled, onChange }: {
+  label: string
+  checked: boolean
+  /** Some but not all rows selected (the header box). */
+  indeterminate?: boolean
+  disabled?: boolean
+  onChange: (checked: boolean) => void
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate
+  }, [indeterminate])
+  return (
+    <input ref={ref} type="checkbox" aria-label={label} checked={checked} disabled={disabled}
+      onChange={(event) => onChange(event.target.checked)}
+      className="h-4 w-4 cursor-pointer rounded border-ink-300 align-middle accent-brand-700 disabled:cursor-not-allowed" />
+  )
+}
+
+/** Export the whole search (every page) or the selected rows of this page, as CSV or JSON (AG-07). */
+function ExportBar({ selected, exporting, disabled, error, onDismissError, onExport, onExportSelected, onClearSelection }: {
+  selected: number
+  /** "all:csv", "selected:json"… while a download runs. */
+  exporting?: string
+  disabled: boolean
+  error?: string
+  onDismissError: () => void
+  onExport: (format: ExportFormat) => void
+  onExportSelected: (format: ExportFormat) => void
+  onClearSelection: () => void
+}) {
+  const selectedLabel = useId()
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div role="group" aria-label="Export these results" className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" icon="document" loading={exporting === 'all:csv'} disabled={disabled}
+            onClick={() => onExport('csv')}>Export CSV</Button>
+          <Button variant="secondary" size="sm" icon="document" loading={exporting === 'all:json'} disabled={disabled}
+            onClick={() => onExport('json')}>Export JSON</Button>
+        </div>
+        <p className="text-sm text-ink-500">Every page of these results, up to 5,000 records.</p>
+      </div>
+      {selected > 0 ? (
+        <div role="group" aria-labelledby={selectedLabel}
+          className="flex flex-wrap items-center gap-2 rounded-control border border-brand-200 bg-brand-50 px-3 py-2">
+          <span id={selectedLabel} className="me-1 text-sm font-medium text-brand-800">Export selected ({selected})</span>
+          <Button variant="secondary" size="sm" loading={exporting === 'selected:csv'} disabled={disabled}
+            onClick={() => onExportSelected('csv')}>CSV</Button>
+          <Button variant="secondary" size="sm" loading={exporting === 'selected:json'} disabled={disabled}
+            onClick={() => onExportSelected('json')}>JSON</Button>
+          <Button variant="ghost" size="sm" disabled={disabled} onClick={onClearSelection}>Clear selection</Button>
+        </div>
+      ) : null}
+      {error ? (
+        <Alert variant="danger" title="The export could not be completed" onDismiss={onDismissError}>{error}</Alert>
+      ) : null}
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   EMPTY_FILTERS,
   describeRange,
+  exportApiPath,
   hasActiveFilters,
   nextSort,
   normalizeFilters,
@@ -84,6 +85,24 @@ describe('searchApiPath', () => {
     )
     expect(searchApiPath('admin', state)).toBe(
       '/admin/records?make=Nissan&organization=Oasis&sort=service_date&order=desc&page=2&page_size=20',
+    )
+  })
+})
+
+describe('exportApiPath', () => {
+  it('sends the filters, sort and format but no paging', () => {
+    const state: SearchState = { ...DEFAULTS, filters: filters({ make: 'Nissan', organization: 'Oasis' }), page: 3, pageSize: 50 }
+    expect(exportApiPath('organization', state, 'csv', 'org-falcon')).toBe(
+      '/organizations/org-falcon/records/export?make=Nissan&sort=service_date&order=desc&format=csv',
+    )
+    expect(exportApiPath('admin', { ...state, sort: 'organization_name', order: 'asc' }, 'json')).toBe(
+      '/admin/records/export?make=Nissan&organization=Oasis&sort=organization_name&order=asc&format=json',
+    )
+  })
+
+  it('repeats ids for an export of selected records', () => {
+    expect(exportApiPath('organization', DEFAULTS, 'json', 'org-falcon', ['rec-1', 'rec-2'])).toBe(
+      '/organizations/org-falcon/records/export?sort=service_date&order=desc&format=json&ids=rec-1&ids=rec-2',
     )
   })
 })

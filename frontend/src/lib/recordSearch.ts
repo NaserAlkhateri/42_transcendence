@@ -191,6 +191,22 @@ export function searchApiPath(scope: SearchScope, state: SearchState, organizati
   return scope === 'admin' ? `/admin/records?${params}` : `/organizations/${organizationId}/records/search?${params}`
 }
 
+export type ExportFormat = 'csv' | 'json'
+
+/** The API path that downloads a search (AG-07): its filters and sort, every page. `ids` narrows it to
+ *  selected records; the API still applies the filters, so a selection never reaches outside the search. */
+export function exportApiPath(
+  scope: SearchScope, state: Pick<SearchState, 'filters' | 'sort' | 'order'>, format: ExportFormat,
+  organizationId?: string, ids: readonly string[] = [],
+): string {
+  const params = filterParams(state.filters, scope)
+  params.set('sort', state.sort)
+  params.set('order', state.order)
+  params.set('format', format)
+  for (const id of ids) params.append('ids', id)
+  return scope === 'admin' ? `/admin/records/export?${params}` : `/organizations/${organizationId}/records/export?${params}`
+}
+
 export function hasActiveFilters(filters: SearchFilters, scope: SearchScope): boolean {
   return filterParams(filters, scope).toString() !== ''
 }

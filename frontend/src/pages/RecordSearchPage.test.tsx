@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from '../App'
 import type { Membership, User } from '../auth/auth-context'
@@ -440,6 +440,180 @@ describe('record search: organisation scope', () => {
     expect(await screen.findByRole('link', { name: 'Add record' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('link', { name: 'Search records' })).not.toHaveAttribute('aria-current')
     await screen.findByLabelText('Oil change')
+  })
+})
+
+describe('record search: export (AG-07)', () => {
+  const CSV_FILE = () => new Response('﻿record_id,vin\r\n', {
+    status: 200,
+    headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="sijil-records-20261020-0815.csv"' },
+  })
+  let saved: { name: string; url: string }[] = []
+
+  beforeEach(() => {
+    saved = []
+    // jsdom has no object URLs and cannot follow a download link: record what would be saved.
+    Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:http://localhost/export'), revokeObjectURL: vi.fn() })
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      saved.push({ name: this.download, url: this.href })
+    })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  /** Answers export requests (after stubApi) and logs their paths. */
+  function stubExports(respond: (url: URL) => Response | Promise<Response> = CSV_FILE) {
+    const searchFetch = globalThis.fetch
+    const exports: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(String(input), 'http://localhost')
+      if (url.pathname.endsWith('/records/export')) {
+        exports.push(`${url.pathname}${url.search}`)
+        return respond(url)
+      }
+      return searchFetch(input, init)
+    }))
+    return exports
+  }
+
+  const rowBox = (vin: string, date: string, km: string) =>
+    screen.getByRole('checkbox', { name: `Select the record for ${vin}, ${date}, ${km}` })
+
+  it('downloads every page of the current filters and sort as CSV or JSON', async () => {
+    stubApi({ rows: many(45) })
+    const exports = stubExports()
+    open('/workshop/records?make=Nissan&work_code=OIL_CHANGE&sort=odometer_km&order=asc&page=2')
+    await findResults()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
+    await waitFor(() => expect(saved).toEqual([{ name: 'sijil-records-20261020-0815.csv', url: 'blob:http://localhost/export' }]))
+    expect(exports).toEqual([
+      '/api/v1/organizations/org-falcon/records/export?make=Nissan&work_code=OIL_CHANGE&sort=odometer_km&order=asc&format=csv',
+    ])
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Export CSV' })).toBeEnabled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }))
+    await waitFor(() => expect(exports).toHaveLength(2))
+    expect(exports[1]).toBe(
+      '/api/v1/organizations/org-falcon/records/export?make=Nissan&work_code=OIL_CHANGE&sort=odometer_km&order=asc&format=json',
+    )
+    await waitFor(() => expect(saved).toHaveLength(2))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Export JSON' })).toBeEnabled())
+  })
+
+  it('shows progress and keeps the other export buttons disabled while a file downloads', async () => {
+    stubApi()
+    let answer: (response: Response) => void = () => undefined
+    stubExports(() => new Promise<Response>((resolve) => { answer = resolve }))
+    open('/workshop/records')
+    await findResults()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }))
+    const busy = await screen.findByRole('button', { name: /Export JSON/ })
+    await waitFor(() => expect(busy).toHaveAttribute('aria-busy', 'true'))
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeDisabled()
+
+    act(() => answer(CSV_FILE()))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Export JSON' })).not.toHaveAttribute('aria-busy'))
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toBeEnabled()
+    expect(saved).toHaveLength(1)
+  })
+
+  it('exports only the selected rows, and select-all picks every row on the page', async () => {
+    stubApi()
+    const exports = stubExports()
+    open('/workshop/records')
+    await findResults()
+    expect(screen.queryByRole('group', { name: /Export selected/ })).toBeNull()
+
+    fireEvent.click(rowBox('JN8AY2NY4K9012345', '11/04/2026', '88,300 km'))
+    fireEvent.click(rowBox('JTNBK3EK6N3012345', '05/11/2025', '451,000 km'))
+    const selectAll = screen.getByRole('checkbox', { name: 'Select all records on this page' })
+    expect(selectAll).not.toBeChecked()
+    expect((selectAll as HTMLInputElement).indeterminate).toBe(true)
+
+    const group = screen.getByRole('group', { name: 'Export selected (2)' })
+    fireEvent.click(within(group).getByRole('button', { name: 'JSON' }))
+    await waitFor(() => expect(exports).toEqual([
+      '/api/v1/organizations/org-falcon/records/export?sort=service_date&order=desc&format=json&ids=rec-patrol&ids=rec-camry',
+    ]))
+    await waitFor(() => expect(within(group).getByRole('button', { name: 'JSON' })).toBeEnabled())
+
+    fireEvent.click(selectAll)
+    expect(selectAll).toBeChecked()
+    expect((selectAll as HTMLInputElement).indeterminate).toBe(false)
+    expect(screen.getByRole('group', { name: 'Export selected (3)' })).toBeInTheDocument()
+    fireEvent.click(within(screen.getByRole('group', { name: 'Export selected (3)' })).getByRole('button', { name: 'CSV' }))
+    await waitFor(() => expect(exports).toHaveLength(2))
+    expect(new URL(exports[1], 'http://localhost').searchParams.getAll('ids')).toEqual(['rec-patrol', 'rec-camry-fix', 'rec-camry'])
+    await waitFor(() => expect(saved).toHaveLength(2))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }))
+    expect(screen.queryByRole('group', { name: /Export selected/ })).toBeNull()
+    expect(selectAll).not.toBeChecked()
+  })
+
+  it('clears the selection when the page, sort or filters change', async () => {
+    stubApi({ rows: many(45) })
+    stubExports()
+    open('/workshop/records')
+    await findResults()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all records on this page' }))
+    expect(screen.getByRole('group', { name: 'Export selected (20)' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }))
+    expect(await screen.findByText('Showing 21–40 of 45 records')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: /Export selected/ })).toBeNull()
+    expect(screen.getByRole('checkbox', { name: 'Select all records on this page' })).not.toBeChecked()
+
+    fireEvent.click(rowBox('JN8AY2NY4K9012345', '11/04/2026', '21,000 km'))
+    expect(screen.getByRole('group', { name: 'Export selected (1)' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Odometer' }))
+    await waitFor(() => expect(window.location.search).toBe('?sort=odometer_km'))
+    await findResults()
+    await waitFor(() => expect(screen.queryByRole('group', { name: /Export selected/ })).toBeNull())
+  })
+
+  it('shows the API’s message when the export is refused', async () => {
+    stubApi()
+    stubExports(() => json({
+      error: { code: 'export_too_large', message: 'More than 5,000 records match. Narrow the filters and export again.' },
+    }, 422))
+    open('/workshop/records')
+    await findResults()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('The export could not be completed')
+    expect(alert).toHaveTextContent('More than 5,000 records match. Narrow the filters and export again.')
+    expect(saved).toEqual([])
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Export CSV' })).toBeEnabled())
+
+    fireEvent.click(within(alert).getByRole('button', { name: 'Dismiss alert' }))
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('downloads platform-wide for admins, organisation filter included', async () => {
+    stubApi({ user: ADMIN })
+    const exports = stubExports()
+    open('/admin/records?organization=Falcon&sort=organization_name&order=asc')
+    await findResults()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }))
+    await waitFor(() => expect(exports).toEqual([
+      '/api/v1/admin/records/export?organization=Falcon&sort=organization_name&order=asc&format=json',
+    ]))
+    await waitFor(() => expect(saved).toHaveLength(1))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Export JSON' })).toBeEnabled())
+  })
+
+  it('offers no export when nothing matches', async () => {
+    stubApi({ rows: [] })
+    open('/workshop/records')
+    expect(await screen.findByText('No service records yet')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Export CSV' })).toBeNull()
   })
 })
 
