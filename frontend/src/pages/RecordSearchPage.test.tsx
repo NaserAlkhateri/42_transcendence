@@ -444,7 +444,7 @@ describe('record search: organisation scope', () => {
 })
 
 describe('record search: export (AG-07)', () => {
-  const CSV_FILE = () => new Response('﻿record_id,vin\r\n', {
+  const CSV_FILE = () => new Response(`${String.fromCharCode(0xfeff)}record_id,vin\r\n`, {
     status: 200,
     headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="sijil-records-20261020-0815.csv"' },
   })
