@@ -327,7 +327,7 @@ describe('import records: importing', () => {
       row({ row: 1 }),
       row({
         row: 2, status: 'error',
-        errors: [{ field: null, code: 'already_recorded', message: 'Your organization has already recorded this service.' }],
+        errors: [{ field: null, code: 'already_recorded', message: 'Your organisation has already recorded this service.' }],
       }),
     ], { dry_run: false })
     stubApi(staff(), (dryRun) => (dryRun ? json(CLEAN) : json({
@@ -343,7 +343,7 @@ describe('import records: importing', () => {
     expect(await screen.findByRole('heading', { name: 'Import refused' })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent('Nothing was imported')
     expect(screen.getByRole('alert')).toHaveTextContent('1 of 2 rows have errors. Nothing was imported.')
-    expect(resultRows()[1]).toHaveTextContent('Row: Your organization has already recorded this service.')
+    expect(resultRows()[1]).toHaveTextContent('Row: Your organisation has already recorded this service.')
     expect(screen.getByRole('button', { name: 'Import 1 record' })).toBeDisabled()
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.queryByText(/^Imported/)).toBeNull()

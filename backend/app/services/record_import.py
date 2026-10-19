@@ -384,7 +384,7 @@ def check_import(db: Session, organization_id: uuid.UUID, file: ImportFile) -> N
         if (row.vin, row.service_date, row.odometer_km, row.category) in recorded:
             row.add_error(
                 None, "already_recorded",
-                "Your organization has already recorded this service (same VIN, date, odometer reading and category).",
+                "Your organisation has already recorded this service (same VIN, date, odometer reading and category).",
             )
     histories = effective_readings_by_vin(db, vins)
     for row in file.rows:

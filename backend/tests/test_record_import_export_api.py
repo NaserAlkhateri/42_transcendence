@@ -748,6 +748,7 @@ def test_rows_this_organization_already_recorded_are_errors(falcon_client: TestC
     )
     body = report(send(falcon_client, falcon, text))
     assert errors_by_row(body) == {1: {(None, "already_recorded")}, 2: {(None, "already_recorded")}, 3: set()}
+    assert body["rows"][0]["errors"][0]["message"].startswith("Your organisation has already recorded this service")
 
     other_category = csv_text(f"{CRUISER},2026-01-10,20000,repair,BRAKE_PADS,")
     assert report(send(falcon_client, falcon, other_category))["valid_rows"] == 1
