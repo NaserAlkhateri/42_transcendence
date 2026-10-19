@@ -1,6 +1,6 @@
 # Sijil - Progress
 
-Last updated: 2026-10-20 (week 3: AG-06 advanced search and AG-07 import/export built; NA-03 to NA-07 merged).
+Last updated: 2026-10-20 (week 3: AG-06 advanced search, AG-07 import/export and AG-08 PM done on `agegnew`; NA-03 to NA-07 merged).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
@@ -8,7 +8,7 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
 - **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
-- **Week 3 for Agegnew:** AG-06 advanced search (branch `AG-06-advanced-search`) and AG-07 CSV/JSON import and export (branch `AG-07-import-export`, built on AG-06) are built, tested and verified in Chromium against the real backend. All Advanced search items (filters, sorting, pagination) and all Data export/import items (multiple formats, import with validation, bulk operations) are ticked. Both still need a peer review and Naser's PO sign-off. AG-08 (PM) is ongoing.
+- **Week 3 is done for Agegnew:** AG-06 advanced search and AG-07 CSV/JSON import and export are on the `agegnew` branch, tested and verified in Chromium against the real backend. All Advanced search items (filters, sorting, pagination) and all Data export/import items (multiple formats, import with validation, bulk operations) are ticked. AG-08 (PM) is done: the README contributions, module notes and this log are up to date. The modules still need a peer review and Naser's PO sign-off when `agegnew` goes to `main`.
 - **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for BU-03.
 - **NA-07 Privacy Policy and Terms of Service are in Review** on `feat/na-07-legal-pages` (built on NA-06). Both pages have real Sijil-specific content in English and Arabic (with a language switch and right-to-left layout), are linked from the footer, and are linked where people agree to them (signup, business registration).
 - **NA-06 security hardening is in Review** on `feat/na-06-security`. It adds login, signup and password throttling, a new session after a password change, the last-platform-admin lock, platform-admin password resets, security headers, a 1 MB body limit and a cross-organization access test matrix. The full list, and what Caddy (BU-02), uploads (BU-03) and WebSockets (BU-04) must add, is in [`SECURITY.md`](SECURITY.md).
@@ -32,9 +32,9 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for BU-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
-| AG-06 Advanced search | Agegnew | In Progress (built) | `/workshop/records` (own organisation), `/admin/records` (all). API in `backend/README.md` |
-| AG-07 CSV/JSON import and export | Agegnew | In Progress (built) | Export on both search pages; import at `/workshop/records/import`. Privacy Policy updated for downloads |
-| AG-08 PM: coordination, demos, README | Agegnew | In Progress | Ongoing until submission |
+| AG-06 Advanced search | Agegnew | Done | `/workshop/records` (own organisation), `/admin/records` (all). API in `backend/README.md` |
+| AG-07 CSV/JSON import and export | Agegnew | Done | Export on both search pages; import at `/workshop/records/import`. Privacy Policy updated for downloads |
+| AG-08 PM: coordination, demos, README | Agegnew | Done | README contributions and module notes, this progress log |
 | NA-03 Organizations: registration, approval, CRUD | Naser | Review (merged) | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents on the review screen wait for BU-03. |
 | NA-04 Organization members and staff accounts | Naser | Review (merged) | Members panel on `/organizations/:id` (entity admins) and in the admin Manage panel |
 | NA-05 Partner API (keys, rate limit, docs) | Naser | Review (merged) | `/admin/api-keys` page; guide in `doc/PARTNER_API.md` |
