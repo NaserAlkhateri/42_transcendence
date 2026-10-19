@@ -8,6 +8,7 @@ from app.api.v1 import (
     members,
     organizations,
     record_search,
+    record_transfer,
     records,
     vehicles,
 )
@@ -20,6 +21,7 @@ api_router.include_router(auth.me_router)
 api_router.include_router(vehicles.router)
 api_router.include_router(records.router)
 api_router.include_router(record_search.router)
+api_router.include_router(record_transfer.router)
 api_router.include_router(organizations.router)
 api_router.include_router(members.router)
 api_router.include_router(admin_users.router)
