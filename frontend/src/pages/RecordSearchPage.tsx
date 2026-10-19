@@ -509,12 +509,17 @@ function ExportBar({ selected, exporting, disabled, error, onDismissError, onExp
   onClearSelection: () => void
 }) {
   const selectedLabel = useId()
+  const exportCsv = useRef<HTMLButtonElement>(null)
+  function clearSelection() {
+    onClearSelection()
+    exportCsv.current?.focus() // the focused Clear selection button is about to go
+  }
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div role="group" aria-label="Export these results" className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" icon="document" loading={exporting === 'all:csv'} disabled={disabled}
-            onClick={() => onExport('csv')}>Export CSV</Button>
+          <Button ref={exportCsv} variant="secondary" size="sm" icon="document" loading={exporting === 'all:csv'}
+            disabled={disabled} onClick={() => onExport('csv')}>Export CSV</Button>
           <Button variant="secondary" size="sm" icon="document" loading={exporting === 'all:json'} disabled={disabled}
             onClick={() => onExport('json')}>Export JSON</Button>
         </div>
@@ -528,7 +533,7 @@ function ExportBar({ selected, exporting, disabled, error, onDismissError, onExp
             onClick={() => onExportSelected('csv')}>CSV</Button>
           <Button variant="secondary" size="sm" loading={exporting === 'selected:json'} disabled={disabled}
             onClick={() => onExportSelected('json')}>JSON</Button>
-          <Button variant="ghost" size="sm" disabled={disabled} onClick={onClearSelection}>Clear selection</Button>
+          <Button variant="ghost" size="sm" disabled={disabled} onClick={clearSelection}>Clear selection</Button>
         </div>
       ) : null}
       {error ? (

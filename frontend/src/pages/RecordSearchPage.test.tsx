@@ -553,6 +553,8 @@ describe('record search: export (AG-07)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }))
     expect(screen.queryByRole('group', { name: /Export selected/ })).toBeNull()
     expect(selectAll).not.toBeChecked()
+    // The focused button is gone: focus moves to the export buttons instead of the top of the page.
+    expect(screen.getByRole('button', { name: 'Export CSV' })).toHaveFocus()
   })
 
   it('forgets the selection and an export error when the user comes back to an earlier page', async () => {
