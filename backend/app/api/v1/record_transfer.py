@@ -1,21 +1,25 @@
-"""CSV/JSON export of service records (AG-07). Export reuses the AG-06 search filters and scoping, so a download
-is "what the search screen shows, every page"."""
+"""CSV/JSON export and import of service records (AG-07). Export reuses the AG-06 search filters and scoping, so
+a download is "what the search screen shows, every page". Import is a dry run by default; a real import writes
+every row or none."""
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
 from app.api.v1.record_search import AdminSearchFilters, SearchFilters
-from app.api.v1.records import SUBMITTER_ROLES
+from app.api.v1.records import SUBMITTER_ROLES, record_added_payload, submitting_organization
 from app.auth.dependencies import CurrentUser
 from app.auth.permissions import PlatformAdmin, require_org_role
-from app.core.errors import ApiError
+from app.core.errors import ApiError, error_body
 from app.db.session import get_db
 from app.models import Organization, User
+from app.schemas.record_transfer import ImportReport, ImportResult
+from app.services import events
 from app.services.audit import record_audit
 from app.services.record_export import (
     MAX_EXPORT_IDS,
@@ -28,9 +32,19 @@ from app.services.record_export import (
     to_csv,
     to_json,
 )
+from app.services.record_import import (
+    MAX_IMPORT_BYTES,
+    ImportFormat,
+    ImportInvalidError,
+    check_import,
+    decode_upload,
+    import_report,
+    parse_import,
+    save_import,
+)
 from app.services.record_search import RecordSearchFilters
 
-router = APIRouter(tags=["record export"])
+router = APIRouter(tags=["record import and export"])
 
 DbSession = Annotated[Session, Depends(get_db)]
 FormatQuery = Annotated[ExportFormat, Query(alias="format", description="csv or json")]
@@ -103,3 +117,82 @@ def export_all_records(
 ) -> Response:
     """Platform-wide download of the records that match the search filters (up to 5,000)."""
     return _download(db, user, filters, export_format, ids, None)
+
+
+def importing_organization(organization_id: uuid.UUID, user: CurrentUser, db: DbSession) -> Organization:
+    return submitting_organization(db, user, organization_id)
+
+
+@dataclass
+class Upload:
+    format: ImportFormat
+    text: str
+
+
+_MEDIA_TYPES: dict[str, ImportFormat] = {"text/csv": "csv", "application/json": "json"}
+
+
+async def read_upload(request: Request) -> Upload:
+    """The raw request body (no multipart), capped at 512 KB even when Content-Length is missing or wrong."""
+    media_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+    if media_type not in _MEDIA_TYPES:
+        raise ApiError(415, "unsupported_media_type", "Send the file as text/csv or application/json.")
+    too_large = ApiError(413, "payload_too_large", f"The file is larger than {MAX_IMPORT_BYTES // 1024} KB. Split it into smaller files.")
+    length = request.headers.get("content-length", "")
+    if length.isdigit() and int(length) > MAX_IMPORT_BYTES:
+        raise too_large
+    body = bytearray()
+    async for chunk in request.stream():
+        body += chunk
+        if len(body) > MAX_IMPORT_BYTES:
+            raise too_large
+    return Upload(format=_MEDIA_TYPES[media_type], text=decode_upload(bytes(body)))
+
+
+_IMPORT_BODY = {
+    "requestBody": {
+        "required": True,
+        "description": "The file itself as the request body, at most 512 KB and 500 records.",
+        "content": {"text/csv": {"schema": {"type": "string"}}, "application/json": {"schema": {"type": "array", "items": {"type": "object"}}}},
+    }
+}
+
+
+@router.post(
+    "/organizations/{organization_id}/records/import",
+    response_model=None,
+    responses={200: {"model": ImportReport}, 201: {"model": ImportResult}},
+    openapi_extra=_IMPORT_BODY,
+)
+def import_records(
+    user: CurrentUser,
+    db: DbSession,
+    organization: Annotated[Organization, Depends(importing_organization)],  # before the body is read
+    upload: Annotated[Upload, Depends(read_upload)],
+    dry_run: Annotated[bool, Query(description="true (default): check and preview only. false: import all rows or none.")] = True,
+) -> JSONResponse:
+    """Check a CSV or JSON file of records (dry run), or import it. A real import is all-or-nothing: any row
+    error answers 422 import_invalid with the report and writes nothing."""
+    file = parse_import(upload.format, upload.text)
+    if dry_run:
+        check_import(db, organization.id, file)
+        return JSONResponse(import_report(file, dry_run=True).model_dump(mode="json"))
+    try:
+        saved = save_import(db, organization=organization, staff=user, file=file)
+    except ImportInvalidError:
+        db.rollback()  # releases the vehicle locks and drops vehicles created for this attempt
+        report = import_report(file, dry_run=False)
+        message = f"{report.invalid_rows} of {report.total_rows} rows have errors. Nothing was imported."
+        body = error_body("import_invalid", message)
+        body["error"]["details"] = report.model_dump(mode="json")  # the same report as a dry run
+        return JSONResponse(status_code=422, content=body)
+    flagged = sum(record.is_mileage_flagged for record, _ in saved)
+    record_audit(
+        db, user, "records.imported", "organization", organization.id,
+        {"count": len(saved), "flagged": flagged, "format": file.format},
+    )
+    db.commit()
+    for record, vin in saved:
+        events.publish("record.added", record_added_payload(record, vin))
+    result = ImportResult(imported=len(saved), flagged=flagged, record_ids=[record.id for record, _ in saved])
+    return JSONResponse(status_code=201, content=result.model_dump(mode="json"))
