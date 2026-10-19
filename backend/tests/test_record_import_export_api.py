@@ -234,6 +234,16 @@ def test_csv_export_neutralises_spreadsheet_formulas(
     assert (row["make"], row["model"]) == ("'=Make", "'@Model")
 
 
+def test_csv_export_escapes_a_leading_apostrophe_so_the_guard_can_be_undone(
+    falcon_client: TestClient, db: Session, falcon, data
+) -> None:
+    staff = db.scalar(select(User).where(User.email == "arjun@example.ae"))
+    record = add_record(db, add_vehicle(db, NEW_VIN), falcon, staff, service_date=date(2026, 6, 1), odometer_km=1_000,
+                        notes="'=quoted on purpose")
+    [row] = csv_rows(falcon_client.get(export_url(falcon), params={"format": "csv", "ids": str(record.id)}))
+    assert row["notes"] == "''=quoted on purpose"
+
+
 def test_csv_export_guards_the_formula_in_the_demo_notes_but_json_keeps_data_as_is(
     falcon_client: TestClient, falcon, data
 ) -> None:
@@ -967,13 +977,17 @@ def test_commit_of_json_works_too(falcon_client: TestClient, db: Session, falcon
 
 
 def test_only_csv_notes_lose_the_export_formula_guard(falcon_client: TestClient, db: Session, falcon) -> None:
-    text = csv_text(f"{NEW_VIN},2026-03-01,30000,repair,BRAKE_PADS,'=1+1", f"{OTHER_VIN},2026-03-01,1,repair,BRAKE_PADS,'quoted'")
+    text = csv_text(
+        f"{NEW_VIN},2026-03-01,30000,repair,BRAKE_PADS,'=1+1",
+        f"{OTHER_VIN},2026-03-01,1,repair,BRAKE_PADS,'quoted'",
+        f"{CAMRY},2026-03-01,1,repair,BRAKE_PADS,''=2",
+    )
     csv_ids = report(send(falcon_client, falcon, text, dry_run=False), 201)["record_ids"]
     payload = [{"vin": THIRD_VIN, "service_date": "2026-03-01", "odometer_km": 1, "category": "repair",
                 "work_codes": ["BRAKE_PADS"], "notes": "'=1+1"}]
     json_ids = report(send(falcon_client, falcon, json.dumps(payload), content_type="application/json", dry_run=False), 201)["record_ids"]
     notes = [db.get(ServiceRecord, uuid.UUID(record_id)).notes for record_id in csv_ids + json_ids]
-    assert notes == ["=1+1", "'quoted'", "'=1+1"]  # JSON exports carry no guard, so JSON notes are kept as sent
+    assert notes == ["=1+1", "'quoted'", "'=2", "'=1+1"]  # JSON exports carry no guard, so JSON notes are kept as sent
 
 
 def test_commit_with_any_invalid_row_writes_nothing(falcon_client: TestClient, db: Session, falcon, data) -> None:
@@ -1134,3 +1148,21 @@ def test_a_filtered_json_export_imports_as_json(client: TestClient, db: Session,
     assert preview["rows"][0]["work_codes"] == ["BRAKE_PADS"]
     result = report(send(client, oasis, exported.content, content_type="application/json", dry_run=False), 201)
     assert db.get(ServiceRecord, uuid.UUID(result["record_ids"][0])).notes == FORMULA_NOTES
+
+
+def test_notes_starting_with_an_apostrophe_survive_a_csv_round_trip(
+    client: TestClient, db: Session, falcon, oasis, data
+) -> None:
+    staff = db.scalar(select(User).where(User.email == "arjun@example.ae"))
+    vehicle = add_vehicle(db, NEW_VIN)
+    notes = ["'=quoted on purpose", "''two", "'plain", "'"]
+    originals = [
+        add_record(db, vehicle, falcon, staff, service_date=date(2026, 6, day), odometer_km=day * 1_000, notes=note)
+        for day, note in enumerate(notes, start=1)
+    ]
+    login(client, "arjun@example.ae")
+    exported = client.get(export_url(falcon), params={"format": "csv", "ids": [str(r.id) for r in originals]})
+    login(client, "fatima@example.ae")
+    result = report(send(client, oasis, exported.content, dry_run=False), 201)
+    stored = sorted(db.get(ServiceRecord, uuid.UUID(record_id)).notes for record_id in result["record_ids"])
+    assert stored == sorted(notes)

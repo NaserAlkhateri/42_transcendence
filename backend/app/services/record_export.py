@@ -39,8 +39,10 @@ EXPORT_COLUMNS = (
     "created_at",
 )
 # A spreadsheet treats a cell starting with one of these as a formula (CSV injection), so such cells get a
-# leading apostrophe. The importer takes it off again.
+# leading apostrophe. A cell that already starts with one gets another, so the importer can take exactly one off
+# again without changing real data.
 FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+GUARDED_PREFIXES = (*FORMULA_PREFIXES, "'")
 
 
 class ExportTooLargeError(Exception):
@@ -93,7 +95,7 @@ def _csv_cell(value: Any) -> Any:
         return "true" if value else "false"
     if isinstance(value, list):
         value = ";".join(value)
-    if isinstance(value, str) and value.startswith(FORMULA_PREFIXES):
+    if isinstance(value, str) and value.startswith(GUARDED_PREFIXES):
         return "'" + value
     return value
 

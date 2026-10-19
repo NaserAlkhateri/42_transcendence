@@ -25,7 +25,7 @@ from app.core.errors import ApiError
 from app.models import Organization, RecordCategory, ServiceRecord, User, Vehicle
 from app.schemas.record_transfer import ImportReport, ImportRowError, ImportRowReport
 from app.schemas.records import MAX_ODOMETER_KM, RecordSubmission
-from app.services.record_export import FORMULA_PREFIXES
+from app.services.record_export import GUARDED_PREFIXES
 from app.services.records import effective_readings_by_vin, lock_vehicle, reading_is_inconsistent, submit_record
 from app.services.vin import InvalidVinError, normalize_vin
 
@@ -290,7 +290,7 @@ def _work_codes(row: ImportRow) -> list[str] | None:
 
 def _notes(row: ImportRow, *, csv_guard: bool) -> str | None:
     text = _text(row, "notes", required=False)
-    if csv_guard and text and len(text) > 1 and text[0] == "'" and text[1:].startswith(FORMULA_PREFIXES):
+    if csv_guard and text and text[0] == "'" and text[1:].startswith(GUARDED_PREFIXES):
         return text[1:]  # undo the CSV export's formula guard, so an export imports unchanged
     return text
 
