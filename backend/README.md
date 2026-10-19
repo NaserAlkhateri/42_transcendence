@@ -170,6 +170,8 @@ Filters (all optional, combined with AND):
 | GET | `/api/v1/admin/records/export` | Platform admins (every organization) |
 | POST | `/api/v1/organizations/{id}/records/import` | Active entity admins and staff of an **approved** organization. Platform admins cannot write history. CSRF header required. |
 
+**In the app:** the search pages (`/workshop/records`, `/admin/records`) have Export CSV / Export JSON buttons for the current filters and sort, plus row checkboxes and "Export selected" (one page at a time; the selection clears when the page, sort or filters change). `/workshop/records/import` ("Import records" in the menu) offers a CSV template, checks the file in the browser (type, 512 KB, not empty), shows the dry-run report row by row, and imports after a confirmation only when no row has an error.
+
 **Export** downloads what the search screen shows, every page of it, in the same order.
 
 - **Params:** every AG-06 filter plus `sort`/`order` (no paging), `format` (required: `csv` or `json`) and `ids` (optional, repeatable, up to 100 record ids for "export selected"). `ids` only narrows the scope and filters. An id outside them is left out, so nobody can export another organization's record by id.
