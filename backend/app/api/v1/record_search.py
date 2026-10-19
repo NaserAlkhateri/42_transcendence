@@ -16,6 +16,7 @@ from app.core.errors import ApiError
 from app.db.session import get_db
 from app.models import Organization, RecordCategory
 from app.schemas.record_search import RecordSearchItem, RecordSearchPage
+from app.schemas.records import MAX_ODOMETER_KM
 from app.services.record_search import RecordSearchFilters, RecordType, SortKey, SortOrder, search_records
 from app.services.vin import InvalidVinError, normalize_vin_fragment
 from app.services.work_codes import BY_CODE
@@ -26,7 +27,7 @@ DbSession = Annotated[Session, Depends(get_db)]
 Page = Annotated[int, Query(ge=1, le=100_000)]  # bounded so OFFSET can never overflow
 PageSize = Annotated[int, Query(ge=1, le=100)]
 ModelYear = Annotated[int | None, Query(ge=1900, le=2100, description="Vehicle model year, inclusive")]
-Odometer = Annotated[int | None, Query(ge=0, description="Odometer reading in km, inclusive")]
+Odometer = Annotated[int | None, Query(ge=0, le=MAX_ODOMETER_KM, description="Odometer reading in km, inclusive")]
 ServiceDate = Annotated[date | None, Query(description="Service date (YYYY-MM-DD), inclusive")]
 VinQuery = Annotated[
     str | None,
@@ -40,6 +41,8 @@ def _text(value: str | None) -> str | None:
     """Blank means "no filter"."""
     if value is None:
         return None
+    if "\x00" in value:  # Postgres text cannot hold NUL, so the query would fail
+        raise ApiError(422, "validation_error", "Search text cannot contain control characters.")
     return value.strip() or None
 
 
@@ -77,7 +80,8 @@ def search_filters(
     _check_range(
         odometer_min, odometer_max, "invalid_odometer_range", "Odometer: the minimum must not be more than the maximum."
     )
-    work_codes = tuple(dict.fromkeys(work_code or ()))  # drop repeats, keep order
+    # Blank codes are ignored like blank text filters; repeats are dropped, order kept.
+    work_codes = tuple(dict.fromkeys(code.strip() for code in work_code or () if code.strip()))
     unknown = [code for code in work_codes if code not in BY_CODE]
     if unknown:
         raise ApiError(422, "unknown_work_code", f"Unknown work code: {', '.join(unknown)}.")

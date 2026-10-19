@@ -294,7 +294,7 @@ def test_partial_vin(admin_client: TestClient, data, vin: str, expected: set[str
     assert found(admin_client, data, vin=vin) == expected
 
 
-@pytest.mark.parametrize("vin", ["HXO1", "1Q2", "I", "JT*", "JTM.HX", "ÉTD", "JTMHX01J5M40123456"])
+@pytest.mark.parametrize("vin", ["HXO1", "1Q2", "I", "JT*", "JTM.HX", "ÉTD", "ß", "JTMHXßJ", "JTMHX01J5M40123456"])
 def test_vin_query_with_impossible_characters_or_too_long_is_rejected(admin_client: TestClient, vin: str) -> None:
     assert error_code(admin_client.get(ADMIN_SEARCH, params={"vin": vin})) == "invalid_vin_query"
 
@@ -345,6 +345,7 @@ def test_like_wildcards_in_text_filters_are_literal(admin_client: TestClient, da
         ({"odometer_min": 98_300}, {"f_patrol_fix", "o_unknown_may"}),
         ({"odometer_max": 20_000}, {"f_cruiser_jan"}),
         ({"odometer_min": 0, "odometer_max": 0}, set()),
+        ({"odometer_max": 2_000_000}, ALL),  # the largest reading a record can have
     ],
 )
 def test_range_filters_are_inclusive(admin_client: TestClient, data, params, expected) -> None:
@@ -360,6 +361,8 @@ def test_range_filters_are_inclusive(admin_client: TestClient, data, params, exp
         ({"work_code": ["BRAKE_PADS", "AIR_FILTER"]}, {"f_cruiser_mar", "f_cruiser_jan"}),
         ({"work_code": ["GENERAL_INSPECTION", "GENERAL_INSPECTION"]}, {"o_camry_apr"}),
         ({"work_code": "SPARK_PLUGS"}, set()),
+        ({"work_code": ""}, ALL),  # blank codes are ignored, like blank text filters
+        ({"work_code": ["", " BRAKE_PADS "]}, {"f_cruiser_mar"}),
         ({"flagged": "true"}, {"f_patrol_feb"}),
         ({"flagged": "false"}, {"f_cruiser_jan", "f_cruiser_mar", "f_patrol_fix", "o_camry_apr", "o_unknown_may"}),
         ({"record_type": "correction"}, {"f_patrol_fix"}),
@@ -412,12 +415,23 @@ def test_organization_route_filters_within_its_scope(falcon_client: TestClient, 
         ({"category": "tuning"}, "validation_error"),
         ({"flagged": "maybe"}, "validation_error"),
         ({"odometer_min": -1}, "validation_error"),
+        ({"odometer_max": 2_000_001}, "validation_error"),
+        ({"odometer_min": 3_000_000_000}, "validation_error"),  # past a Postgres integer
         ({"date_from": "11/04/2026"}, "validation_error"),
         ({"organization_id": "not-a-uuid"}, "validation_error"),
     ],
 )
 def test_invalid_queries_get_422_with_a_code(admin_client: TestClient, params, code: str) -> None:
     assert error_code(admin_client.get(ADMIN_SEARCH, params=params)) == code
+
+
+@pytest.mark.parametrize("field", ["make", "model", "staff", "organization"])
+def test_nul_bytes_in_text_filters_are_rejected(admin_client: TestClient, field: str) -> None:
+    assert error_code(admin_client.get(ADMIN_SEARCH, params={field: "a\x00b"})) == "validation_error"
+
+
+def test_nul_bytes_are_rejected_on_the_organization_route_too(falcon_client: TestClient, falcon) -> None:
+    assert error_code(falcon_client.get(org_search(falcon), params={"make": "a\x00b"})) == "validation_error"
 
 
 def test_range_errors_also_apply_on_the_organization_route(falcon_client: TestClient, falcon) -> None:
