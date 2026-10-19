@@ -18,10 +18,11 @@ def normalize_vin(raw: str) -> str:
     The ISO 3779 check digit is deliberately not enforced: it is mandatory only for North American
     VINs, and GCC-market imports from Japan or Europe legitimately fail it.
     """
-    vin = _SEPARATORS.sub("", raw).translate(_ARABIC_DIGITS).upper()
-    if not VIN_PATTERN.fullmatch(vin):
+    vin = _SEPARATORS.sub("", raw).translate(_ARABIC_DIGITS)
+    # ASCII is checked before upper-casing, which turns letters like "ß" into valid-looking ones ("SS").
+    if not vin.isascii() or not VIN_PATTERN.fullmatch(vin.upper()):
         raise InvalidVinError("A VIN has exactly 17 letters or digits and never contains I, O or Q.")
-    return vin
+    return vin.upper()
 
 
 def normalize_vin_fragment(raw: str) -> str:

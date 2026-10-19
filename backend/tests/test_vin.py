@@ -29,6 +29,8 @@ def test_normalize_vin_accepts_and_canonicalizes(raw: str, expected: str) -> Non
         "JTDBR32E72Q123456",  # letter Q
         "JTDBR32E72012345!",
         "ÉTDBR32E720123456",
+        "JTDBR32E7201234ß",  # 16 characters; "ß".upper() is "SS", which would look like 17
+        "JTDBR32E7201234ﬆ",  # same with the "st" ligature
     ],
 )
 def test_normalize_vin_rejects_invalid_input(raw: str) -> None:
