@@ -57,10 +57,10 @@ export const PRIVACY_POLICY: BilingualDocument = {
         items: [
           'Anyone, without signing in, can see a VIN’s history: the car’s make, model and year, service dates, categories, work done, odometer readings, mileage warnings, corrections and the name of the business that submitted each record. The PDF report shows the same.',
           'Partners holding a Sijil API key (for example a demo insurer) can read the same vehicle history through the partner API. They never receive account, staff or note data.',
-          'The business that created a record can also see the staff member’s name and the private note. Other businesses cannot.',
+          'The business that created a record can also see the staff member’s name and the private note, and can search and download its records as CSV or JSON files. Other businesses cannot.',
           'Members of a business can see its details and status; its entity admins can see and manage its members.',
           'Licence documents are visible only to the uploading business’s entity admins and to platform admins. Consumers and partners never see them. Only a platform admin can delete one, and the deletion is recorded.',
-          'Platform admins can see accounts, businesses, members and the audit log in order to run the platform.',
+          'Platform admins can see accounts, businesses, members, all service records (including staff names and private notes) and the audit log in order to run the platform, and can search and download service records. Every download of service records is recorded in the audit log.',
         ],
       },
       {
@@ -190,10 +190,10 @@ export const PRIVACY_POLICY: BilingualDocument = {
         items: [
           'يمكن لأي شخص، دون تسجيل الدخول، رؤية تاريخ أي رقم شاصي: الشركة المصنّعة والطراز وسنة الصنع، وتواريخ الخدمة وفئاتها، والأعمال المنجزة، وقراءات العداد، وتحذيرات المسافة، والتصحيحات، واسم المنشأة التي أضافت كل سجل. ويعرض تقرير PDF المعلومات نفسها.',
           'يمكن للشركاء الذين يحملون مفتاح واجهة برمجة من سجل (مثل شركة تأمين تجريبية) قراءة تاريخ المركبة نفسه عبر واجهة الشركاء. ولا يحصلون أبداً على بيانات الحسابات أو الموظفين أو الملاحظات.',
-          'يمكن للمنشأة التي أنشأت السجل أن ترى أيضاً اسم الموظف والملاحظة الخاصة. ولا تستطيع المنشآت الأخرى ذلك.',
+          'يمكن للمنشأة التي أنشأت السجل أن ترى أيضاً اسم الموظف والملاحظة الخاصة، وأن تبحث في سجلاتها وتنزّلها بصيغة CSV أو JSON. ولا تستطيع المنشآت الأخرى ذلك.',
           'يمكن لأعضاء المنشأة رؤية بياناتها وحالتها، ويمكن لمسؤوليها رؤية أعضائها وإدارتهم.',
           'لا يرى مستندات الرخصة إلا مسؤولو المنشأة التي رفعتها ومسؤولو المنصة. ولا يراها المستهلكون أو الشركاء أبداً. ولا يحذفها إلا مسؤول المنصة، ويُسجَّل الحذف.',
-          'يمكن لمسؤولي المنصة رؤية الحسابات والمنشآت والأعضاء وسجل التدقيق لتشغيل المنصة.',
+          'يمكن لمسؤولي المنصة رؤية الحسابات والمنشآت والأعضاء وجميع سجلات الصيانة (بما فيها أسماء الموظفين والملاحظات الخاصة) وسجل التدقيق لتشغيل المنصة، كما يمكنهم البحث في سجلات الصيانة وتنزيلها. ويُسجَّل كل تنزيل لسجلات الصيانة في سجل التدقيق.',
         ],
       },
       {
