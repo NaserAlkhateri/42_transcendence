@@ -162,6 +162,74 @@ Filters (all optional, combined with AND):
 - **Errors:** 401 `not_authenticated`, 403 `forbidden` (consumers, another organization's staff, non-admins on the admin route), 404 `organization_not_found`, and 422 `invalid_vin_query`, `invalid_year_range`, `invalid_date_range`, `invalid_odometer_range`, `unknown_work_code`, or `validation_error` (unknown `sort`/`order`/`record_type`/`category`, page or odometer bounds, malformed values, a NUL character in a text filter).
 - **Queries:** two per request, one for the page and one `COUNT` over the same filters. Vehicle facts and `corrected_by_id` come from joins, so there is no per-row query. `app/services/record_search.py` holds the query builder (`build_search_query`) for AG-07's export, and `app/api/v1/record_search.py` the shared filter dependency.
 
+## Import and export (AG-07)
+
+| Method | Path | Who |
+| --- | --- | --- |
+| GET | `/api/v1/organizations/{id}/records/export` | Like the organization search: active entity admins and staff of that organization; platform admins |
+| GET | `/api/v1/admin/records/export` | Platform admins (every organization) |
+| POST | `/api/v1/organizations/{id}/records/import` | Active entity admins and staff of an **approved** organization. Platform admins cannot write history. CSRF header required. |
+
+**Export** downloads what the search screen shows, every page of it, in the same order.
+
+- **Params:** every AG-06 filter plus `sort`/`order` (no paging), `format` (required: `csv` or `json`) and `ids` (optional, repeatable, up to 100 record ids for "export selected"). `ids` only narrows the scope and filters. An id outside them is left out, so nobody can export another organization's record by id.
+- **Limit:** 5,000 rows. More matches answer 422 `export_too_large` ("Narrow the filters…"). The file is never cut off.
+- **Headers:** `Content-Type: text/csv; charset=utf-8` or `application/json`, `Content-Disposition: attachment; filename="sijil-records-YYYYMMDD-HHMM.csv"` (or `.json`, UTC time), `Cache-Control: no-store`.
+- **CSV:** UTF-8 with a BOM (so Excel shows Arabic), CRLF line ends, a header row, then one row per record. The columns are `record_id`, `vin`, `make`, `model`, `model_year`, `service_date` (YYYY-MM-DD), `category`, `work_codes` (joined with `;`), `odometer_km`, `organization_name`, `staff_name`, `notes`, `is_mileage_flagged` (`true`/`false`), `corrects_record_id`, `correction_reason` and `created_at` (ISO 8601 UTC, `Z`). Standard CSV quoting keeps commas, quotes and line breaks in notes. **Formula guard:** a cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading `'`, so a spreadsheet does not run it.
+- **JSON:** `{exported_at, scope ("organization" or "platform"), organization_id (null for platform), filters (the applied filters, sort and ids), count, records}`. Records have the CSV fields, with `work_codes` as an array and numbers, booleans and nulls as JSON types. There is no formula guard in JSON.
+- **Audit:** `records.exported` with `format`, `count` and `scope`. The target is the organization, or `platform`/`all`. No record contents.
+- **Errors:** the search errors (401, 403 `forbidden`, 404 `organization_not_found`, the 422 filter codes), 422 `validation_error` (missing or unknown `format`, more than 100 or malformed `ids`), and 422 `export_too_large`.
+
+**Import** checks a file (`dry_run=true`, the default) or imports it (`dry_run=false`).
+
+- **The file is the raw request body** (no multipart), with `Content-Type: text/csv` or `application/json`. A charset parameter is ignored. The body must be UTF-8 (a BOM is fine), at most **512 KB** (524,288 bytes) and at most **500 records**. The size limit is applied while the body is read, so it also holds when `Content-Length` is missing or wrong.
+- **CSV:** the first row names the columns. `vin`, `service_date`, `odometer_km`, `category` and `work_codes` are required; `notes` is optional. Column names ignore case and surrounding spaces, and spaces or dashes inside count as underscores. Other columns are ignored, with one warning, so an AG-07 export works as a template. Blank lines are skipped. The delimiter is a comma.
+- **JSON:** an array of objects, or `{"records": [...]}` (the shape of an AG-07 JSON export). It uses the same field names. `work_codes` is an array or a `;`-separated string, and `odometer_km` a number or text. An item that is not an object is a row error.
+- **Values:**
+  - **VIN:** normalized like the form (case, spaces, dashes, Arabic-Indic digits).
+  - **service_date:** `YYYY-MM-DD` or `DD/MM/YYYY`. Day first, never month first.
+  - **odometer_km:** whole km, with optional thousands commas (`88,300`).
+  - **category:** `maintenance` or `repair`, in any case.
+  - **work_codes:** separated by `;`. Any case; blanks are ignored.
+  - **notes:** optional. In CSV, a leading `'` before `=`, `+`, `-`, `@`, a tab or a carriage return is removed, which undoes the export's formula guard.
+
+  Each row is then checked with `RecordSubmission`, the form's own schema: known and unique codes (at most 10), no future date, 0-2,000,000 km, notes up to 1,000 characters.
+- **Row numbers:** in CSV, the data row number without the header, so row 1 is the line after the header. Blank lines still count, so row *n* is line *n* + 1 of the file and row *n* + 1 of the spreadsheet (a note with line breaks takes more file lines but stays one spreadsheet row). In JSON, the position in the list, starting at 1.
+- **Duplicates:** `duplicate_in_file` means a later row has the same VIN, date and reading as an earlier one. `already_recorded` means the row equals a record of this organization on VIN, date, reading and category (corrected records included), which stops accidental double imports.
+- **Dry run (200):** `{dry_run: true, format, total_rows, valid_rows, invalid_rows, flagged_rows, warnings: [str], rows: [{row, vin, service_date, odometer_km, category, work_codes, status ("ok" or "error"), errors: [{field (null for the whole row), code, message}], will_be_flagged}]}`.
+  - A field with an error comes back as null (or `[]` for work codes).
+  - `will_be_flagged` predicts the mileage flag against the stored history plus the earlier valid rows of the file.
+  - The dry run reads only: no locks, no writes.
+- **Import (201):** `{dry_run: false, imported, flagged, record_ids}`, with record ids in file order. It is all or nothing, in one transaction:
+  1. It locks every vehicle in the file in VIN order, creating new ones. Imports that share vehicles then wait for each other instead of deadlocking (`tests/test_record_import_concurrency.py`).
+  2. It checks the rows again under those locks.
+  3. It appends them in file order through `submit_record`, so each flag is computed exactly as for a single submission.
+  4. It commits, publishes `record.added` for each record, and audits `records.imported` with `count`, `flagged` and `format`.
+
+  If any row has an error, the answer is 422 `import_invalid`, with the same report in `error.details`, and nothing is written.
+
+| Row error `code` | Field | Meaning |
+| --- | --- | --- |
+| `required` | any required field | Missing or blank |
+| `invalid_vin` | `vin` | Not a valid VIN |
+| `invalid_date` / `future_date` | `service_date` | Not YYYY-MM-DD or DD/MM/YYYY, not a real date, or in the future |
+| `invalid_number` / `out_of_range` | `odometer_km` | Not whole km, or outside 0-2,000,000 |
+| `invalid_category` | `category` | Not maintenance or repair |
+| `invalid_work_code` | `work_codes` | Unknown, repeated, or more than 10 |
+| `too_long` | `notes` | Over 1,000 characters |
+| `invalid_type` | any | JSON value of the wrong type |
+| `invalid_row` | null | JSON item that is not an object |
+| `duplicate_in_file` / `already_recorded` | null | See Duplicates |
+
+| File error | Status |
+| --- | --- |
+| `unsupported_media_type` (not text/csv or application/json) | 415 |
+| `payload_too_large` (over 512 KB) | 413 |
+| `invalid_encoding` (not UTF-8, or contains NUL), `empty_file` (no records, also a header-only CSV), `invalid_csv` (broken quoting), `invalid_json` (not JSON, or not a list / `{"records": [...]}`), `missing_columns` (lists them), `duplicate_columns`, `too_many_rows` (over 500), `import_invalid` (`dry_run=false` only), `validation_error` (`dry_run` not a boolean) | 422 |
+| `csrf_failed`, `forbidden`, `organization_not_approved` | 403 |
+| `not_authenticated` | 401 |
+| `organization_not_found` | 404 |
+
 ## PDF report (AG-05)
 
 `GET /api/v1/vehicles/{vin}/report.pdf` (public, like the timeline) downloads `sijil-report-{VIN}.pdf`. A VIN without history gets 404 `no_history`.
