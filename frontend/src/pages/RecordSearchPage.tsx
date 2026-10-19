@@ -116,10 +116,12 @@ function RecordSearch({ scope, organizations }: { scope: SearchScope; organizati
     return params
   }
 
-  function go(next: Partial<SearchState>, organization?: string) {
+  function go(next: Partial<SearchState>, organization = organizationId) {
     const params = paramsFor(next, organization)
-    if (params.toString() === searchParams.toString()) setReload((value) => value + 1)
-    else setSearchParams(params)
+    // Compare the request, not the address: an address that spells out defaults (?page=1) is tidied
+    // but asks for the same search, which still has to run again.
+    if (searchApiPath(scope, searchFromParams(params, scope), organization) === path) setReload((value) => value + 1)
+    if (params.toString() !== searchParams.toString()) setSearchParams(params)
   }
 
   // A shared link or a shrinking result set can point past the last page: show the last page instead.

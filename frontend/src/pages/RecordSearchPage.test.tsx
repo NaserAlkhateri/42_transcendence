@@ -295,6 +295,18 @@ describe('record search: organisation scope', () => {
     await findResults()
   })
 
+  it('runs the search again on the first press even when the address is tidied', async () => {
+    const searches = stubApi()
+    open('/workshop/records?page=1&make=nissan&order=desc')
+    await findResults()
+
+    search()
+    await waitFor(() => expect(searches).toHaveLength(2))
+    expect(searches[1]).toBe(searches[0])
+    expect(window.location.search).toBe('?make=nissan')
+    await findResults()
+  })
+
   it('follows back and forward', async () => {
     const searches = stubApi()
     open('/workshop/records')
@@ -368,6 +380,30 @@ describe('record search: organisation scope', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }))
     expect(screen.queryByText("Choose a date on or after the 'from' date.")).toBeNull()
     expect(screen.getByLabelText('Service date from')).toHaveValue('')
+  })
+
+  it('clears the filters from the address with the form’s Clear button, keeping the sort', async () => {
+    const searches = stubApi()
+    open('/workshop/records?make=Nissan&staff=Arjun&page=2&sort=vin&order=asc')
+    await findResults()
+    expect(screen.getByLabelText('Make')).toHaveValue('Nissan')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }))
+    await waitFor(() => expect(window.location.search).toBe('?sort=vin&order=asc'))
+    await waitFor(() => expect(last(searches)).toBe(`${ORG_SEARCH}?sort=vin&order=asc&page=1&page_size=20`))
+    expect(screen.getByLabelText('Make')).toHaveValue('')
+    expect(screen.getByLabelText('Staff name')).toHaveValue('')
+    await findResults()
+  })
+
+  it('ignores an impossible date in the address', async () => {
+    const searches = stubApi()
+    open('/workshop/records?date_from=2026-02-31&make=Nissan')
+    await findResults()
+
+    expect(searches).toEqual([`${ORG_SEARCH}?make=Nissan&${DEFAULT_QUERY}`])
+    expect(screen.getByLabelText('Service date from')).toHaveValue('')
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('does not send a reversed range from the address', async () => {
