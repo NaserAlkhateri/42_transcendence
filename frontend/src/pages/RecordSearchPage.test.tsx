@@ -555,6 +555,35 @@ describe('record search: export (AG-07)', () => {
     expect(selectAll).not.toBeChecked()
   })
 
+  it('forgets the selection and an export error when the user comes back to an earlier page', async () => {
+    stubApi({ rows: many(45) })
+    stubExports(() => json({ error: { code: 'export_too_large', message: 'More than 5,000 records match.' } }, 422))
+    open('/workshop/records')
+    await findResults()
+    const selectAll = () => screen.getByRole('checkbox', { name: 'Select all records on this page' })
+
+    fireEvent.click(selectAll())
+    fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('More than 5,000 records match.')
+    expect(screen.getByRole('group', { name: 'Export selected (20)' })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }))
+    expect(await screen.findByText('Showing 21–40 of 45 records')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Previous page' }))
+    expect(await screen.findByText('Showing 1–20 of 45 records')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: /Export selected/ })).toBeNull()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(selectAll()).not.toBeChecked()
+
+    fireEvent.click(selectAll())
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }))
+    expect(await screen.findByText('Showing 21–40 of 45 records')).toBeInTheDocument()
+    act(() => window.history.back())
+    expect(await screen.findByText('Showing 1–20 of 45 records')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: /Export selected/ })).toBeNull()
+    expect(selectAll()).not.toBeChecked()
+  })
+
   it('clears the selection when the page, sort or filters change', async () => {
     stubApi({ rows: many(45) })
     stubExports()

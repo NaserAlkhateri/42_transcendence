@@ -114,11 +114,18 @@ function RecordSearch({ scope, organizations }: { scope: SearchScope; organizati
   const current = result?.key === requestKey ? result : undefined
   const loading = !!requestKey && !current
 
-  // Selected rows and export errors belong to one result set: a new search, sort or page starts empty.
-  const [selection, setSelection] = useState<{ key: string; ids: string[] }>()
-  const selectedIds = selection && selection.key === requestKey ? selection.ids : []
+  // Selected rows and export errors belong to one result set: a new search, sort or page starts empty, and so
+  // does coming back to an earlier one, whose rows may have changed since.
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [exporting, setExporting] = useState<string>()
+  // Keyed, so an export that fails after the user moved on is not reported on the new results.
   const [exportError, setExportError] = useState<{ key: string; message: string }>()
+  const [resultKey, setResultKey] = useState(requestKey)
+  if (resultKey !== requestKey) {
+    setResultKey(requestKey)
+    setSelectedIds([])
+    setExportError(undefined)
+  }
 
   async function exportRecords(format: ExportFormat, ids: string[] = []) {
     const key = requestKey ?? ''
@@ -192,7 +199,7 @@ function RecordSearch({ scope, organizations }: { scope: SearchScope; organizati
         data={shown.data}
         loading={loading}
         selected={selectedIds}
-        onSelect={(ids) => requestKey && setSelection({ key: requestKey, ids })}
+        onSelect={setSelectedIds}
         actions={
           <ExportBar
             selected={selectedIds.length}
@@ -202,7 +209,7 @@ function RecordSearch({ scope, organizations }: { scope: SearchScope; organizati
             onDismissError={() => setExportError(undefined)}
             onExport={(format) => void exportRecords(format)}
             onExportSelected={(format) => void exportRecords(format, selectedIds)}
-            onClearSelection={() => setSelection(undefined)}
+            onClearSelection={() => setSelectedIds([])}
           />
         }
         onSort={(key) => go({ ...nextSort(search, key), page: 1 })}
