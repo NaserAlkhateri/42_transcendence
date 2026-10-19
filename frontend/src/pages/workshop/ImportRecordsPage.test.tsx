@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { App } from '../../App'
@@ -350,6 +350,10 @@ describe('import records: importing', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Choose another file' }))
     expect(screen.queryByRole('heading', { name: 'Import refused' })).toBeNull()
+    // The focused button is gone: focus moves to the emptied file input.
+    const input = screen.getByLabelText(/^File \(CSV or JSON\)/)
+    expect(input).toHaveValue('')
+    await waitFor(() => expect(input).toHaveFocus())
   })
 
   it('reports a failed import that is not about the rows', async () => {
@@ -408,6 +412,52 @@ describe('import records: organisations and access', () => {
     await screen.findByRole('heading', { name: 'Check results' })
     fireEvent.change(screen.getByLabelText(/^Organisation/), { target: { value: 'org-oasis' } })
     expect(screen.queryByRole('heading', { name: 'Check results' })).toBeNull()
+  })
+
+  it('keeps the organisation fixed during a check and never shows a check made for another one', async () => {
+    let answer: (response: Response) => void = () => undefined
+    const posts = stubApi(staff([
+      member(),
+      member({ id: 'mem-oasis', organization_id: 'org-oasis', organization_name: 'Oasis Line Motors' }),
+    ]), (dryRun) => (dryRun ? new Promise<Response>((resolve) => { answer = resolve }) : json({
+      dry_run: false, imported: 2, flagged: 1, record_ids: ['a', 'b'],
+    }, 201)))
+    open()
+
+    const picker = await screen.findByLabelText(/^Organisation/)
+    fireEvent.change(picker, { target: { value: 'org-falcon' } })
+    await chooseFile(csvFile())
+    check()
+    await waitFor(() => expect(posts).toHaveLength(1))
+    expect(picker).toBeDisabled()
+
+    // Even if the choice changes before Falcon's answer arrives, that answer is not shown for Oasis.
+    fireEvent.change(picker, { target: { value: 'org-oasis' } })
+    act(() => answer(json(CLEAN)))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Check file' })).not.toHaveAttribute('aria-busy'))
+    expect(picker).toBeEnabled()
+    expect(screen.queryByRole('heading', { name: 'Check results' })).toBeNull()
+    expect(posts.map((post) => post.path)).toEqual(['/api/v1/organizations/org-falcon/records/import?dry_run=true'])
+  })
+
+  it('imports into the organisation the file was checked for', async () => {
+    const posts = stubApi(staff([
+      member(),
+      member({ id: 'mem-oasis', organization_id: 'org-oasis', organization_name: 'Oasis Line Motors' }),
+    ]), (dryRun) => (dryRun ? json(CLEAN) : json({ dry_run: false, imported: 2, flagged: 1, record_ids: ['a', 'b'] }, 201)))
+    open()
+
+    fireEvent.change(await screen.findByLabelText(/^Organisation/), { target: { value: 'org-oasis' } })
+    await chooseFile(csvFile())
+    check()
+    fireEvent.click(await screen.findByRole('button', { name: 'Import 2 records' }))
+    expect(screen.getByRole('dialog')).toHaveTextContent('for Oasis Line Motors')
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Import 2 records' }))
+    await screen.findByText('Imported 2 records (1 flagged)')
+    expect(posts.map((post) => post.path)).toEqual([
+      '/api/v1/organizations/org-oasis/records/import?dry_run=true',
+      '/api/v1/organizations/org-oasis/records/import?dry_run=false',
+    ])
   })
 
   it('tells members of an organisation awaiting approval why they cannot import', async () => {

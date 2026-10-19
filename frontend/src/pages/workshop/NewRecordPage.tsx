@@ -47,8 +47,8 @@ export function AwaitingApproval() {
 }
 
 /** Shown only when the user can submit for more than one organization. */
-export function OrganizationPicker({ organizations, value, onChange, error }: {
-  organizations: Membership[]; value: string; onChange: (id: string) => void; error?: string
+export function OrganizationPicker({ organizations, value, onChange, error, disabled }: {
+  organizations: Membership[]; value: string; onChange: (id: string) => void; error?: string; disabled?: boolean
 }) {
   if (organizations.length === 1) {
     return (
@@ -58,7 +58,7 @@ export function OrganizationPicker({ organizations, value, onChange, error }: {
     )
   }
   return (
-    <Select label="Organisation" required placeholder="Choose…" value={value} error={error}
+    <Select label="Organisation" required placeholder="Choose…" value={value} error={error} disabled={disabled}
       options={organizations.map((m) => ({ value: m.organization_id, label: m.organization_name }))}
       onChange={(event) => onChange(event.target.value)} />
   )

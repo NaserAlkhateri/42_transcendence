@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type RefObject } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth, type Membership } from '../../auth/auth-context'
@@ -68,8 +68,14 @@ function Importer({ organizations }: { organizations: Membership[] }) {
   const [file, setFile] = useState<File>()
   const [fileError, setFileError] = useState<string>()
   const [inputKey, setInputKey] = useState(0) // a new key empties the file input
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const focusFileInput = useRef(false)
   const [checking, setChecking] = useState(false)
-  const [report, setReport] = useState<ImportReport>()
+  // The report of the last check, with the organisation it was made for: an import goes to that one.
+  const [checked, setChecked] = useState<{ report: ImportReport; organizationId: string }>()
+  const report = checked?.report
+  // Bumped whenever the outcome is cleared, so the answer of an outdated check is dropped.
+  const checkSeq = useRef(0)
   // Set when a real import was refused: the report then explains why nothing was imported.
   const [rejection, setRejection] = useState<string>()
   const [failure, setFailure] = useState<Failure>()
@@ -83,8 +89,16 @@ function Importer({ organizations }: { organizations: Membership[] }) {
     if (report || imported) outcomeRef.current?.focus()
   }, [report, imported])
 
+  // After "Choose another file" the focused button is gone: continue at the new, empty file input.
+  useEffect(() => {
+    if (!focusFileInput.current) return
+    focusFileInput.current = false
+    fileInputRef.current?.focus()
+  }, [inputKey])
+
   function clearOutcome() {
-    setReport(undefined)
+    checkSeq.current += 1
+    setChecked(undefined)
     setRejection(undefined)
     setFailure(undefined)
     setImported(undefined)
@@ -118,30 +132,33 @@ function Importer({ organizations }: { organizations: Membership[] }) {
     setFileError(check.ok ? undefined : check.error)
     setOrganizationError(organizationId ? undefined : 'Choose an organisation.')
     if (!check.ok || !file || !organizationId) return
+    const seq = checkSeq.current
     setChecking(true)
     try {
-      setReport(await checkImport(organizationId, file, check.format))
+      const result = await checkImport(organizationId, file, check.format)
+      if (seq === checkSeq.current) setChecked({ report: result, organizationId })
     } catch (error) {
-      setFailure(describeImportError(error, 'The file could not be checked'))
+      if (seq === checkSeq.current) setFailure(describeImportError(error, 'The file could not be checked'))
     } finally {
       setChecking(false)
     }
   }
 
   async function onImport() {
-    if (!file || !report) return
+    if (!file || !checked) return
+    const target = checked.organizationId
     setImporting(true)
     try {
-      const result = await runImport(organizationId, file, report.format)
+      const result = await runImport(target, file, checked.report.format)
       reset()
-      setImported({ result, organizationId })
+      setImported({ result, organizationId: target })
     } catch (error) {
       const refused = rejectedImportReport(error)
       if (refused) {
-        setReport(refused)
+        setChecked({ report: refused, organizationId: target })
         setRejection(errorMessage(error))
       } else {
-        setReport(undefined)
+        setChecked(undefined)
         setFailure(describeImportError(error, 'Nothing was imported'))
       }
     } finally {
@@ -154,7 +171,7 @@ function Importer({ organizations }: { organizations: Membership[] }) {
     if (codes) saveBlob(new Blob([csvTemplate(codes)], { type: 'text/csv;charset=utf-8' }), TEMPLATE_FILENAME)
   }
 
-  const organizationName = organizations.find((m) => m.organization_id === organizationId)?.organization_name
+  const checkedName = organizations.find((m) => m.organization_id === checked?.organizationId)?.organization_name
   const searchLink = (id: string) => {
     const params = new URLSearchParams({ sort: 'created_at' })
     if (organizations.length > 1) params.set('org', id)
@@ -168,8 +185,9 @@ function Importer({ organizations }: { organizations: Membership[] }) {
       <Card title="Check a file">
         <form noValidate onSubmit={onCheck} className="flex flex-col gap-5">
           <OrganizationPicker organizations={organizations} value={organizationId} onChange={chooseOrganization}
-            error={organizationError} />
-          <FileInput key={inputKey} error={fileError} disabled={checking || importing} onChange={chooseFile} />
+            error={organizationError} disabled={checking || importing} />
+          <FileInput key={inputKey} inputRef={fileInputRef} error={fileError} disabled={checking || importing}
+            onChange={chooseFile} />
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" loading={checking} disabled={importing} className="self-start">Check file</Button>
             {checking ? <p className="text-sm text-ink-600">Checking every row. This can take a few seconds.</p> : null}
@@ -191,7 +209,8 @@ function Importer({ organizations }: { organizations: Membership[] }) {
         ) : null}
         {report ? (
           <ReportView report={report} rejection={rejection} label={label}
-            onImport={() => setConfirming(true)} onReset={reset} busy={importing} />
+            onImport={() => setConfirming(true)} onReset={() => { focusFileInput.current = true; reset() }}
+            busy={importing} />
         ) : null}
       </div>
 
@@ -206,7 +225,7 @@ function Importer({ organizations }: { organizations: Membership[] }) {
           <div className="flex flex-col gap-3 text-sm text-ink-700">
             <p>
               {records(report.valid_rows)} will be added to the vehicle histories
-              {organizationName ? <> for <span className="font-semibold text-ink-900">{organizationName}</span></> : null}.
+              {checkedName ? <> for <span className="font-semibold text-ink-900">{checkedName}</span></> : null}.
             </p>
             {report.flagged_rows > 0 ? (
               <p>{records(report.flagged_rows)} will be saved with a mileage warning.</p>
@@ -282,7 +301,8 @@ function Instructions({ codes, codesError, onTemplate }: {
   )
 }
 
-function FileInput({ error, disabled, onChange }: {
+function FileInput({ inputRef, error, disabled, onChange }: {
+  inputRef: RefObject<HTMLInputElement | null>
   error?: string
   disabled: boolean
   onChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -290,7 +310,7 @@ function FileInput({ error, disabled, onChange }: {
   return (
     <Field label="File (CSV or JSON)" required error={error} hint="A .csv or .json file, up to 512 KB and 500 records.">
       {(a11y) => (
-        <input {...a11y} type="file" accept=".csv,.json,text/csv,application/json" disabled={disabled} onChange={onChange}
+        <input {...a11y} ref={inputRef} type="file" accept=".csv,.json,text/csv,application/json" disabled={disabled} onChange={onChange}
           className={cx(
             'block w-full rounded-control border bg-white text-sm text-ink-700',
             'file:me-3 file:h-10 file:cursor-pointer file:border-0 file:border-e file:border-ink-300 file:bg-ink-100',
