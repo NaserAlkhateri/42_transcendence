@@ -107,6 +107,18 @@ export function formatServiceDate(isoDate: string): string {
   })
 }
 
+/** 11/04/2026, the table format in doc/UAE_MARKET.md. A calendar date (YYYY-MM-DD) is shown as is; a
+ *  timestamp is shown as its date in the UAE (UTC+4). */
+export function formatTableDate(value: string): string {
+  const calendarDate = ISO_DATE.test(value)
+  return new Date(calendarDate ? `${value}T00:00:00Z` : value).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: calendarDate ? 'UTC' : 'Asia/Dubai',
+  })
+}
+
 export function formatOdometer(km: number): string {
   return `${new Intl.NumberFormat('en-GB').format(km)} km`
 }

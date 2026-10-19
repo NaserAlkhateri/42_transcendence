@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { orderWithCorrections, type TimelineRecord } from './timeline'
+import { formatOdometer, formatTableDate, orderWithCorrections, type TimelineRecord } from './timeline'
 
 function record(id: string, corrects: string | null = null): TimelineRecord {
   return {
@@ -30,5 +30,24 @@ describe('orderWithCorrections', () => {
 
   it('shows a correction whose original is filtered out on its own', () => {
     expect(ids(orderWithCorrections([record('correction', 'hidden')]))).toEqual(['correction'])
+  })
+})
+
+describe('formatTableDate', () => {
+  it('writes a service date day first, as the UAE market guide asks', () => {
+    expect(formatTableDate('2026-04-11')).toBe('11/04/2026')
+    expect(formatTableDate('2025-12-01')).toBe('01/12/2025')
+  })
+
+  it('shows a timestamp as its date in the UAE (UTC+4)', () => {
+    expect(formatTableDate('2026-04-11T19:59:00Z')).toBe('11/04/2026')
+    expect(formatTableDate('2026-04-11T20:00:00Z')).toBe('12/04/2026')
+  })
+})
+
+describe('formatOdometer', () => {
+  it('uses thousands separators and km', () => {
+    expect(formatOdometer(88300)).toBe('88,300 km')
+    expect(formatOdometer(0)).toBe('0 km')
   })
 })
