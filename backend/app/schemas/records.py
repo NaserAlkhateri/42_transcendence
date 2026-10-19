@@ -41,6 +41,8 @@ class RecordFields(BaseModel):
     @field_validator("notes")
     @classmethod
     def blank_is_none(cls, value: str | None) -> str | None:
+        if value and "\x00" in value:  # PostgreSQL text cannot store NUL; without this check it is a 500
+            raise ValueError("Notes cannot contain control characters.")
         return value or None
 
 
