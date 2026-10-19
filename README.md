@@ -59,6 +59,18 @@ Every member is a full-stack developer and owns their features end to end (API +
 
 Work is tracked in Trello (Transcendence workspace): `Backlog -> To Do -> In Progress -> Review -> Done`. Daily check-ins, peer reviews and a weekly demo. Every module card carries a checklist copied from the subject; a module is claimed only when every item is ticked. See `doc/TEAM.md` for the 8 planned full-stack tasks per member, test ownership and week-by-week objectives. Record tools/chat channel details and **actual** contributions before final evaluation.
 
+### Actual individual contributions
+Each member keeps their own entry up to date as their cards finish.
+
+- **Agegnew (PM + full-stack):**
+  - Backend foundation (AG-01): FastAPI app, the full database schema with Alembic migrations, the append-only trigger on service records, and the demo seed.
+  - VIN lookup (AG-02): VIN normalisation and the consumer timeline API and page.
+  - Record submission (AG-03): one locked transaction per record that decides the mileage flag, with concurrency tests.
+  - Corrections (AG-04): each correction is linked to its original record.
+  - PDF report (AG-05): consumer-safe, in English and Arabic.
+  - Advanced search (AG-06) and CSV/JSON import and export (AG-07), described under "Module notes" below.
+  - Project management: set up the Trello board and cards, coordinated the weekly plan, and tracked progress in [`doc/progress.md`](doc/progress.md).
+
 ## Features and ownership
 Each feature has one end-to-end owner (API + UI + tests):
 - **Agegnew:** VIN lookup and timeline, service record submission with mileage flags, corrections, PDF report, advanced search, CSV/JSON import/export.
@@ -90,6 +102,27 @@ Each feature has one end-to-end owner (API + UI + tests):
 **Core target: 16 points** - the five majors (10) plus ORM, RTL, advanced search, file management, additional browsers and custom design system (6). That leaves a 2-point margin above the required 14 if one module is not validated. **Stretch to 18:** full CRUD notifications (+1) and bulk import/export (+1). Watchlist notifications remain a product feature even if the full notification minor is incomplete.
 
 Not claiming: three-language i18n (English + Arabic only), GDPR minor (its confirmation emails conflict with no SMTP), OAuth, 2FA, or Prometheus/Grafana monitoring. Google login may be considered after core delivery. Do not implement friends/chat or a game just to pursue points.
+
+### Module notes
+Each module owner adds how their module is built and how to demonstrate it. API details are in [`backend/README.md`](backend/README.md).
+
+**Advanced search (AG-06, Agegnew):** workshops and platform admins need to find records across many cars, not one VIN at a time.
+- **Pages:** workshop staff search their own organisation's records at `/workshop/records`. Platform admins search every organisation at `/admin/records`.
+- **Filters:** part of a VIN, make, model, model year, service date, odometer range, category, work codes, mileage flag, originals or corrections, corrected or not, staff name, and organisation (admins only).
+- **Sorting:** six columns, with fixed tie-breakers so a record never appears on two pages or is skipped.
+- **Pagination:** page and page size, with the total number of matches.
+- **Shareable searches:** the search lives in the URL, so a link, refresh or Back keeps it.
+- **Demo:** sign in as workshop staff, filter by make and the mileage flag, sort by odometer, then change page and page size.
+
+**Data export and import (AG-07, Agegnew):** workshops moving from paper or another system need to load their history in bulk, and both workshops and admins need their data out.
+- **Export:** the current search (all pages) or only the selected rows, as CSV or JSON.
+  - The CSV opens correctly in Excel, including Arabic text, and cells that could run as spreadsheet formulas are neutralised.
+  - Every download is written to the audit log.
+- **Import:** a CSV or JSON file goes through a check step first. The preview shows errors per row and field (bad VIN, date, work code, duplicates, records already entered) and which rows will get a mileage flag.
+  - The import itself is all or nothing: one transaction locks the affected cars in a fixed order, so it can't deadlock with other imports.
+  - Each row is saved through the same submission code as the single-record form, so flags are computed the same way.
+- **Bulk operations:** importing up to 500 rows at once, and selecting rows on the search page to export them together.
+- **Demo:** on `/workshop/records/import`, download the template, check a file that contains errors, fix it and import it. Then export the new records from `/workshop/records`.
 
 ## Mandatory submission checklist
 - [ ] Responsive, accessible frontend; backend and database; secure signup/login with salted/hashed passwords.
