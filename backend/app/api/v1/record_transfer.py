@@ -191,8 +191,10 @@ def import_records(
         db, user, "records.imported", "organization", organization.id,
         {"count": len(saved), "flagged": flagged, "format": file.format},
     )
-    db.commit()
-    for record, vin in saved:
-        events.publish("record.added", record_added_payload(record, vin))
+    # Read the records before the commit expires them; afterwards each one would be loaded again.
+    payloads = [record_added_payload(record, vin) for record, vin in saved]
     result = ImportResult(imported=len(saved), flagged=flagged, record_ids=[record.id for record, _ in saved])
+    db.commit()
+    for payload in payloads:
+        events.publish("record.added", payload)
     return JSONResponse(status_code=201, content=result.model_dump(mode="json"))

@@ -10,7 +10,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import func, select
+from sqlalchemy import Engine, event, func, select
 from sqlalchemy.orm import Session
 
 from app.core.time import uae_today
@@ -974,6 +974,22 @@ def test_commit_of_json_works_too(falcon_client: TestClient, db: Session, falcon
     assert (record.category, record.work_codes, record.notes) == (RecordCategory.REPAIR, ["BRAKE_PADS"], "Squeaking")
     audit = db.scalar(select(AuditEvent).where(AuditEvent.action == "records.imported"))
     assert audit.details == {"count": 1, "flagged": 0, "format": "json"}
+
+
+def test_a_commit_reads_no_record_back_after_committing(falcon_client: TestClient, engine: Engine, falcon) -> None:
+    statements: list[str] = []
+
+    def log(conn, cursor, statement, parameters, context, executemany) -> None:
+        statements.append(statement)
+
+    rows = [f"{NEW_VIN},2026-01-{day:02d},{day * 1000},maintenance,OIL_CHANGE," for day in range(1, 11)]
+    event.listen(engine, "before_cursor_execute", log)
+    try:
+        report(send(falcon_client, falcon, csv_text(*rows), dry_run=False), 201)
+    finally:
+        event.remove(engine, "before_cursor_execute", log)
+    committed = max(index for index, statement in enumerate(statements) if statement.startswith("RELEASE SAVEPOINT"))
+    assert [statement for statement in statements[committed + 1:] if "service_records" in statement] == []
 
 
 def test_only_csv_notes_lose_the_export_formula_guard(falcon_client: TestClient, db: Session, falcon) -> None:
