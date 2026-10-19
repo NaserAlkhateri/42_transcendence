@@ -148,9 +148,9 @@ Filters (all optional, combined with AND):
 | `make`, `model`, `staff` | Case-insensitive substring. `%`, `_` and `\` are matched literally. |
 | `year_from`, `year_to` | Vehicle model year (1900-2100), inclusive |
 | `date_from`, `date_to` | Service date (`YYYY-MM-DD`), inclusive |
-| `odometer_min`, `odometer_max` | Reading in km (>= 0), inclusive |
+| `odometer_min`, `odometer_max` | Reading in km (0-2,000,000, the same limit as a record), inclusive |
 | `category` | `maintenance` or `repair` |
-| `work_code` | Repeatable (`?work_code=OIL_CHANGE&work_code=BRAKE_PADS`); records with **any** of the codes |
+| `work_code` | Repeatable (`?work_code=OIL_CHANGE&work_code=BRAKE_PADS`); records with **any** of the codes. Blank values are ignored. |
 | `flagged` | `true` / `false`: the mileage flag |
 | `record_type` | `all` (default), `original` (not a correction) or `correction` |
 | `corrected` | `true` / `false`: whether a later correction replaces the record |
@@ -159,7 +159,7 @@ Filters (all optional, combined with AND):
 - **Sorting:** `sort` = `service_date` (default), `created_at`, `odometer_km`, `vin`, `make` or `organization_name`; `order` = `desc` (default) or `asc`. Text sorts ignore case, and vehicles without a make come last. Ties are broken by newest `created_at` and then `id`, so pages never repeat or skip a row.
 - **Paging:** `page` (1-100,000, default 1) and `page_size` (1-100, default 20). The response is `{items, total, page, page_size}`; `total` counts every match. A page past the end has empty `items` and the real `total`.
 - **Items:** `id`, `vin`, `make`, `model`, `model_year`, `service_date`, `created_at`, `category`, `work_codes`, `odometer_km`, `organization_id` (null once the organization is deleted), `organization_name`, `staff_name`, `notes`, `is_mileage_flagged`, `corrects_record_id`, `correction_reason`, `corrected_by_id`. Staff names and notes are included because only members and admins can search.
-- **Errors:** 401 `not_authenticated`, 403 `forbidden` (consumers, another organization's staff, non-admins on the admin route), 404 `organization_not_found`, and 422 `invalid_vin_query`, `invalid_year_range`, `invalid_date_range`, `invalid_odometer_range`, `unknown_work_code`, or `validation_error` (unknown `sort`/`order`/`record_type`/`category`, page bounds, malformed values).
+- **Errors:** 401 `not_authenticated`, 403 `forbidden` (consumers, another organization's staff, non-admins on the admin route), 404 `organization_not_found`, and 422 `invalid_vin_query`, `invalid_year_range`, `invalid_date_range`, `invalid_odometer_range`, `unknown_work_code`, or `validation_error` (unknown `sort`/`order`/`record_type`/`category`, page or odometer bounds, malformed values, a NUL character in a text filter).
 - **Queries:** two per request, one for the page and one `COUNT` over the same filters. Vehicle facts and `corrected_by_id` come from joins, so there is no per-row query. `app/services/record_search.py` holds the query builder (`build_search_query`) for AG-07's export, and `app/api/v1/record_search.py` the shared filter dependency.
 
 ## PDF report (AG-05)
