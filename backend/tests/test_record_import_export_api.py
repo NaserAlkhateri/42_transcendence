@@ -688,7 +688,7 @@ def test_row_errors_carry_row_numbers_fields_and_codes(falcon_client: TestClient
         f"{NEW_VIN},2026-03-01,-5,maintenance,OIL_CHANGE,",  # 15
         f"{NEW_VIN},2026-03-01,30008,maintenance,{eleven_codes},",  # 16
         f"{NEW_VIN},2026-03-01,99999999999999999999,maintenance,OIL_CHANGE,",  # 17
-        f"   ,2026-03-01,30009,  ,OIL_CHANGE,",  # 18: spaces only count as blank
+        "   ,2026-03-01,30009,  ,OIL_CHANGE,",  # 18: spaces only count as blank
     )
 
     body = report(send(falcon_client, falcon, text))
