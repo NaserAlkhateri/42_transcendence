@@ -52,7 +52,9 @@ def test_normalize_vin_fragment_allows_any_length_up_to_17(raw: str, expected: s
     assert normalize_vin_fragment(raw) == expected
 
 
-@pytest.mark.parametrize("raw", ["HXO1", "Q", "i", "JT*", "JTM.HX", "ÉTD", "JTDBR32E7201234567"])
+@pytest.mark.parametrize(
+    "raw", ["HXO1", "Q", "i", "JT*", "JTM.HX", "ÉTD", "ß", "ſ", "ﬆ", "JTMHXßJ", "JTDBR32E7201234567"]
+)
 def test_normalize_vin_fragment_rejects_characters_never_in_a_vin(raw: str) -> None:
     with pytest.raises(InvalidVinError):
         normalize_vin_fragment(raw)

@@ -27,7 +27,8 @@ def normalize_vin(raw: str) -> str:
 def normalize_vin_fragment(raw: str) -> str:
     """Part of a VIN typed into a search box, normalized like `normalize_vin` but 0 to 17 characters long.
     Blank input gives ""."""
-    fragment = _SEPARATORS.sub("", raw).translate(_ARABIC_DIGITS).upper()
-    if not _VIN_FRAGMENT.fullmatch(fragment):
+    fragment = _SEPARATORS.sub("", raw).translate(_ARABIC_DIGITS)
+    # ASCII is checked before upper-casing, which turns letters like "ß" into valid-looking ones ("SS").
+    if not fragment.isascii() or not _VIN_FRAGMENT.fullmatch(fragment.upper()):
         raise InvalidVinError("Enter up to 17 letters or digits of the VIN. A VIN never contains I, O or Q.")
-    return fragment
+    return fragment.upper()
