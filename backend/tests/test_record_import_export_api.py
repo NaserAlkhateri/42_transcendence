@@ -613,6 +613,49 @@ def test_json_rows_with_wrong_types_get_row_errors(falcon_client: TestClient, fa
     assert "colour" in warning
 
 
+JSON_RECORD = {"vin": NEW_VIN, "service_date": "2026-03-01", "odometer_km": 30_000, "category": "repair",
+               "work_codes": ["OIL_CHANGE"], "notes": "ok"}
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        pytest.param({"notes": "bad\x00note"}, id="NUL in notes"),
+        pytest.param({"vin": NEW_VIN + "\x00"}, id="NUL in the VIN"),
+        pytest.param({"no\x00tes": "x"}, id="NUL in a key"),
+        pytest.param({"notes": "bad\ud800note"}, id="surrogate in notes"),
+        pytest.param({"\ud800": 1}, id="surrogate in an ignored key"),
+        pytest.param({"work_codes": ["\ud800"]}, id="surrogate in a work code list"),
+        pytest.param({"work_codes": "OIL_CHANGE;\udfff"}, id="surrogate in a work code string"),
+    ],
+)
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_json_escapes_that_are_not_text_are_invalid_encoding(
+    falcon_client: TestClient, db: Session, falcon, change: dict, dry_run: bool
+) -> None:
+    before = record_count(db)
+    text = json.dumps([{**JSON_RECORD, "vin": OTHER_VIN}, {**JSON_RECORD, **change}])  # ASCII, with \u escapes
+    response = send(falcon_client, falcon, text, content_type="application/json", dry_run=dry_run)
+    assert error_code(response) == "invalid_encoding"
+    assert record_count(db) == before
+
+
+def test_escaped_characters_outside_the_basic_plane_are_kept(falcon_client: TestClient, db: Session, falcon) -> None:
+    text = json.dumps([{**JSON_RECORD, "notes": "Washed \U0001F697"}])
+    assert "\\ud83d\\ude97" in text  # a surrogate pair, which is valid
+    body = report(send(falcon_client, falcon, text, content_type="application/json", dry_run=False), 201)
+    assert db.get(ServiceRecord, uuid.UUID(body["record_ids"][0])).notes == "Washed \U0001F697"
+
+
+def test_json_fields_named_twice_are_row_errors(falcon_client: TestClient, falcon) -> None:
+    same_once_cleaned = json.dumps({**JSON_RECORD, "VIN": OTHER_VIN})
+    exactly_the_same = json.dumps(JSON_RECORD).replace('"notes": "ok"', '"notes": "ok", "notes": "again"')
+    text = f"[{same_once_cleaned}, {exactly_the_same}]"
+    body = report(send(falcon_client, falcon, text, content_type="application/json"))
+    assert errors_by_row(body) == {1: {("vin", "duplicate_field")}, 2: {("notes", "duplicate_field")}}
+    assert body["rows"][1]["vin"] == NEW_VIN  # the other fields are still checked
+
+
 def test_row_errors_carry_row_numbers_fields_and_codes(falcon_client: TestClient, falcon) -> None:
     future = (uae_today() + timedelta(days=2)).isoformat()
     eleven_codes = ";".join(["OIL_CHANGE", "AIR_FILTER", "CABIN_FILTER", "AC_SERVICE", "BATTERY_REPLACE",

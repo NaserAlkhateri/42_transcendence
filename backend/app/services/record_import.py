@@ -49,6 +49,10 @@ _LABELS = {"vin": "VIN", "service_date": "Service date", "odometer_km": "Odomete
 _ISO_DATE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
 _DAY_FIRST_DATE = re.compile(r"(\d{1,2})/(\d{1,2})/(\d{4})")  # never month first
 _KILOMETRES = re.compile(r"\d{1,12}|\d{1,3}(?:,\d{3}){1,3}")  # 88300 or 88,300
+# NUL, which Postgres text cannot hold, and lone UTF-16 surrogates, which are not text. Decoding catches them as
+# raw bytes; this catches them written as JSON \u escapes.
+_NOT_TEXT = re.compile("[\x00\ud800-\udfff]")
+_ENCODING_MESSAGE = "The file must be UTF-8 text. In Excel, save it as \"CSV UTF-8\"."
 
 
 @dataclass
@@ -93,13 +97,12 @@ class ImportInvalidError(Exception):
 
 def decode_upload(body: bytes) -> str:
     """The request body as text: UTF-8, with or without a byte-order mark."""
-    message = "The file must be UTF-8 text. In Excel, save it as \"CSV UTF-8\"."
     try:
         text = body.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
-        raise ApiError(422, "invalid_encoding", message) from exc
+        raise _invalid_encoding() from exc
     if "\x00" in text:  # UTF-16 or a binary file; Postgres text cannot hold NUL either
-        raise ApiError(422, "invalid_encoding", message)
+        raise _invalid_encoding()
     if not text.strip():
         raise _empty_file()
     return text
@@ -114,6 +117,10 @@ def parse_import(file_format: ImportFormat, text: str) -> ImportFile:
         _check_row(row, csv_guard=file_format == "csv")
     _mark_duplicates(rows)
     return ImportFile(format=file_format, rows=rows, warnings=warnings)
+
+
+def _invalid_encoding() -> ApiError:
+    return ApiError(422, "invalid_encoding", _ENCODING_MESSAGE)
 
 
 def _empty_file() -> ApiError:
@@ -169,9 +176,23 @@ def _csv_rows(text: str) -> tuple[list[ImportRow], list[str]]:
     return rows, _ignored("columns", ignored)
 
 
+class _JsonObject(dict):
+    """A JSON object that also keeps its pairs as written, so a repeated key is not silently dropped."""
+
+    def __init__(self, pairs: list[tuple[str, Any]]) -> None:
+        super().__init__(pairs)
+        self.pairs = pairs
+
+
+def _not_text(value: Any) -> bool:
+    if isinstance(value, str):
+        return _NOT_TEXT.search(value) is not None
+    return isinstance(value, list) and any(isinstance(item, str) and _NOT_TEXT.search(item) for item in value)
+
+
 def _json_rows(text: str) -> tuple[list[ImportRow], list[str]]:
     try:
-        data = json.loads(text)
+        data = json.loads(text, object_pairs_hook=_JsonObject)
     except (ValueError, RecursionError) as exc:
         raise ApiError(422, "invalid_json", "The file is not valid JSON.") from exc
     if isinstance(data, dict) and isinstance(data.get("records"), list):
@@ -186,12 +207,17 @@ def _json_rows(text: str) -> tuple[list[ImportRow], list[str]]:
     ignored: set[str] = set()
     for number, item in enumerate(items, start=1):
         row = ImportRow(number=number, raw={})
-        if isinstance(item, dict):
-            for key, value in item.items():
-                if _column_key(key) in COLUMNS:
-                    row.raw[_column_key(key)] = value
-                else:
+        if isinstance(item, _JsonObject):
+            for key, value in item.pairs:
+                if _not_text(key) or _not_text(value):
+                    raise _invalid_encoding()
+                name = _column_key(key)
+                if name not in COLUMNS:
                     ignored.add(key)
+                elif name not in row.raw:
+                    row.raw[name] = value
+                elif not row.failed(name):  # "vin" and "VIN", or the same key twice
+                    row.add_error(name, "duplicate_field", "This field appears more than once in the record.")
         else:
             row.add_error(None, "invalid_row", "Each record must be a JSON object.")
         rows.append(row)
@@ -293,7 +319,7 @@ def _schema_error(name: str, error: ErrorDetails) -> tuple[str, str]:
 
 def _check_row(row: ImportRow, *, csv_guard: bool) -> None:
     """Parse the raw values, then apply the record form's own rules (RecordSubmission) and the VIN check."""
-    if not row.ok:  # not a JSON object
+    if any(error.code == "invalid_row" for error in row.errors):  # not a JSON object
         return
     values = {
         "vin": _text(row, "vin", required=True),
