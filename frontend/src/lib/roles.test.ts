@@ -67,6 +67,17 @@ describe('record search in the navigation', () => {
   })
 })
 
+describe('record import in the navigation', () => {
+  it('is offered to entity admins and staff only', () => {
+    for (const role of ['entity_admin', 'entity_staff'] as const) {
+      expect(navItemsFor(user(role))).toContainEqual({ to: '/workshop/records/import', label: 'Import records' })
+    }
+    for (const role of ['consumer', 'platform_admin'] as const) {
+      expect(navItemsFor(user(role)).map((item) => item.to)).not.toContain('/workshop/records/import')
+    }
+  })
+})
+
 describe('organisation links in the navigation', () => {
   const labels = (u: User) => navItemsFor(u).map((item) => item.label)
   const member = (organization_status: 'pending' | 'approved' | 'rejected'): User => ({

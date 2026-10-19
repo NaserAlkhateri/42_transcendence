@@ -29,6 +29,7 @@ export function navItemsFor(user: User | null | undefined): NavItem[] {
       { to: '/workshop/records/new', label: 'Add record' },
       { to: '/workshop/corrections', label: 'Correct a record' },
       { to: '/workshop/records', label: 'Search records' },
+      { to: '/workshop/records/import', label: 'Import records' },
     )
   }
   if (!user.must_change_password && user.role !== 'platform_admin') {

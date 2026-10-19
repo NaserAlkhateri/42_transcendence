@@ -25,6 +25,7 @@ const TermsOfServicePage = lazy(() => import('./pages/legal/LegalPages').then((m
 const VehicleTimelinePage = lazy(() => import('./pages/VehicleTimelinePage').then((m) => ({ default: m.VehicleTimelinePage })))
 const NewRecordPage = lazy(() => import('./pages/workshop/NewRecordPage').then((m) => ({ default: m.NewRecordPage })))
 const CorrectRecordPage = lazy(() => import('./pages/workshop/CorrectRecordPage').then((m) => ({ default: m.CorrectRecordPage })))
+const ImportRecordsPage = lazy(() => import('./pages/workshop/ImportRecordsPage').then((m) => ({ default: m.ImportRecordsPage })))
 const RecordSearchPage = lazy(() => import('./pages/RecordSearchPage').then((m) => ({ default: m.RecordSearchPage })))
 
 export function App() {
@@ -66,6 +67,10 @@ function AppRoutes() {
             <Route
               path="workshop/records/new"
               element={<Lazy><RequireRole roles={['entity_admin', 'entity_staff']}><NewRecordPage /></RequireRole></Lazy>}
+            />
+            <Route
+              path="workshop/records/import"
+              element={<Lazy><RequireRole roles={['entity_admin', 'entity_staff']}><ImportRecordsPage /></RequireRole></Lazy>}
             />
             <Route
               path="workshop/corrections"
