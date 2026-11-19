@@ -1,17 +1,17 @@
 # Sijil - Progress
 
-Last updated: 2026-10-20 (week 3: AG-06 advanced search, AG-07 import/export and AG-08 PM done on `agegnew`; NA-03 to NA-07 merged).
+Last updated: 2026-11-19 (Veronika took over Burhan's cards, now `VE-`; AG-06 advanced search and AG-07 import/export go to `main` from `agegnew`; NA-03 to NA-07 merged).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
 ## Summary
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
-- **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
+- **Veronika joined on 2026-11-19 and took over all of Burhan's cards**, none of which had been started. They kept their numbers and were renamed from `BU-` to `VE-` (VE-01 to VE-06, VE-08, VE-09). Her week-1 cards come first (VE-01 contracts, VE-02 Docker Compose + Caddy): until VE-02 lands there is no single-command start, which is part of the week-1 demo gate.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
-- **Week 3 is done for Agegnew:** AG-06 advanced search and AG-07 CSV/JSON import and export are on the `agegnew` branch, tested and verified in Chromium against the real backend. All Advanced search items (filters, sorting, pagination) and all Data export/import items (multiple formats, import with validation, bulk operations) are ticked. AG-08 (PM) is done: the README contributions, module notes and this log are up to date. The modules still need a peer review and Naser's PO sign-off when `agegnew` goes to `main`.
-- **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for BU-03.
-- **NA-07 Privacy Policy and Terms of Service are in Review** on `feat/na-07-legal-pages` (built on NA-06). Both pages have real Sijil-specific content in English and Arabic (with a language switch and right-to-left layout), are linked from the footer, and are linked where people agree to them (signup, business registration).
-- **NA-06 security hardening is in Review** on `feat/na-06-security`. It adds login, signup and password throttling, a new session after a password change, the last-platform-admin lock, platform-admin password resets, security headers, a 1 MB body limit and a cross-organization access test matrix. The full list, and what Caddy (BU-02), uploads (BU-03) and WebSockets (BU-04) must add, is in [`SECURITY.md`](SECURITY.md).
+- **Week 3 is done for Agegnew:** AG-06 advanced search and AG-07 CSV/JSON import and export were built on the `agegnew` branch and go to `main` on 2026-11-19, tested and verified in Chromium against the real backend. All Advanced search items (filters, sorting, pagination) and all Data export/import items (multiple formats, import with validation, bulk operations) are ticked. AG-08 (PM) is done: the README contributions, module notes and this log are up to date. The modules still need a peer review and Naser's PO sign-off.
+- **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for VE-03.
+- **NA-07 Privacy Policy and Terms of Service are merged** (PR #18; the card is still in Review on Trello). Both pages have real Sijil-specific content in English and Arabic (with a language switch and right-to-left layout), are linked from the footer, and are linked where people agree to them (signup, business registration).
+- **NA-06 security hardening is merged** (PR #17; the card is still in Review on Trello). It adds login, signup and password throttling, a new session after a password change, the last-platform-admin lock, platform-admin password resets, security headers, a 1 MB body limit and a cross-organization access test matrix. The full list, and what Caddy (VE-02), uploads (VE-03) and WebSockets (VE-04) must add, is in [`SECURITY.md`](SECURITY.md).
 - **NA-05 partner API is merged**: six key-authenticated endpoints at `/api/partner/v1` (vehicle summary and history, watchlist GET/POST/PUT/DELETE), admin-issued and revocable keys, per-key rate limiting with 429, and partner docs (`doc/PARTNER_API.md`, `/api/partner/v1/docs`). All eight Public API checklist items are ticked; it still needs a peer review and Naser's PO sign-off.
 - **NA-04 members and staff accounts is merged**: entity admins add and remove members, create staff accounts with a temporary password, and assign entity roles. With NA-03 + NA-04, all four Organization-system checklist items are ticked; the module still needs a peer review and Naser's PO sign-off.
 - On `main` (with NA-03): backend 172 tests, frontend 119 tests, lint and build clean. With NA-04: backend 186, frontend 125. With NA-05: backend 209, frontend 130. With NA-06: backend 229, frontend 136. With NA-07: frontend 146. With AG-06 + AG-07: backend 518, frontend 261.
@@ -27,19 +27,19 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | NA-02 Users, roles, role-based views | Naser | Done | Turning a consumer into entity staff needs memberships (NA-04) |
 | HA-01 Frontend bootstrap and app shell | Hassan | Done | |
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
-| BU-01 Architecture and contracts | Burhan | To Do | |
-| BU-02 Docker Compose, Caddy, HTTPS | Burhan | To Do | Blocks the week-1 single-command start |
-| AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for BU-04 |
+| VE-01 Architecture and contracts | Veronika | To Do | Was BU-01 (Burhan) |
+| VE-02 Docker Compose, Caddy, HTTPS | Veronika | To Do | Was BU-02 (Burhan). Blocks the week-1 single-command start |
+| AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for VE-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
 | AG-06 Advanced search | Agegnew | Done | `/workshop/records` (own organisation), `/admin/records` (all). API in `backend/README.md` |
 | AG-07 CSV/JSON import and export | Agegnew | Done | Export on both search pages; import at `/workshop/records/import`. Privacy Policy updated for downloads |
 | AG-08 PM: coordination, demos, README | Agegnew | Done | README contributions and module notes, this progress log |
-| NA-03 Organizations: registration, approval, CRUD | Naser | Review (merged) | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents on the review screen wait for BU-03. |
+| NA-03 Organizations: registration, approval, CRUD | Naser | Review (merged) | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents on the review screen wait for VE-03. |
 | NA-04 Organization members and staff accounts | Naser | Review (merged) | Members panel on `/organizations/:id` (entity admins) and in the admin Manage panel |
 | NA-05 Partner API (keys, rate limit, docs) | Naser | Review (merged) | `/admin/api-keys` page; guide in `doc/PARTNER_API.md` |
-| NA-06 Security hardening and review | Naser | Review | `doc/SECURITY.md`; admin "Reset password" on `/admin/users` |
-| NA-07 Privacy Policy and Terms of Service | Naser | Review | `/privacy`, `/terms` (`?lang=ar` for Arabic); text in `frontend/src/pages/legal/` |
+| NA-06 Security hardening and review | Naser | Review (merged) | `doc/SECURITY.md`; admin "Reset password" on `/admin/users` |
+| NA-07 Privacy Policy and Terms of Service | Naser | Review (merged) | `/privacy`, `/terms` (`?lang=ar` for Arabic); text in `frontend/src/pages/legal/` |
 | All other cards (week 2-3) | | Backlog | |
 
 Week-1 review fixes merged on 2026-10-13:
@@ -99,13 +99,13 @@ Dev setup: run the backend on port 8000 (see `backend/README.md`) and `npm run d
 Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint and build clean.
 
 ## Notes for teammates
-- **Everyone (week 2):** `POST /api/v1/organizations/{id}/records` is how history is written. Listen for new records with `app.services.events.subscribe` (`record.added`: VIN, record id, date, flag, corrected id). Burhan's WebSocket (BU-04), Hassan's watchlist alerts (HA-04) and the admin flagged queue (HA-05) can all build on it. Work-code labels (English + Arabic) come from `GET /api/v1/work-codes`.
+- **Everyone (week 2):** `POST /api/v1/organizations/{id}/records` is how history is written. Listen for new records with `app.services.events.subscribe` (`record.added`: VIN, record id, date, flag, corrected id). Veronika's WebSocket (VE-04), Hassan's watchlist alerts (HA-04) and the admin flagged queue (HA-05) can all build on it. Work-code labels (English + Arabic) come from `GET /api/v1/work-codes`.
 - **Hassan (HA-04):** the Watch button lives in `src/components/WatchVinButton.tsx`. Guests are sent to log in and come back to the VIN. Wire the signed-in state to the watchlist API there.
-- **Burhan (BU-02):** the session and CSRF cookies are `Secure`, so the stack has to be served over HTTPS through Caddy. Caddy should route `/api/*` to FastAPI and everything else to the frontend build. `COOKIE_SECURE` and `SESSION_TTL_HOURS` are in `backend/.env.example`.
+- **Veronika (VE-02):** the session and CSRF cookies are `Secure`, so the stack has to be served over HTTPS through Caddy. Caddy should route `/api/*` to FastAPI and everything else to the frontend build. `COOKIE_SECURE` and `SESSION_TTL_HOURS` are in `backend/.env.example`.
 - **Agegnew (AG-03 onward):** use `require_org_role` for record submission. Deleting a user leaves their service records in place, with `staff_id` set to NULL and the stored `staff_name` kept.
-- **Burhan (BU-03, BU-05):** registration and review are in place (NA-03). For BU-03, add the licence documents to `GET /api/v1/admin/organizations/{id}` and show them in the Manage panel on `/admin/organizations`; members upload from `/organizations/:id`. For BU-05, `organization.reviewed` is published on approve and reject (`organization_id`, `name`, `status`, `rejection_reason`).
+- **Veronika (VE-03, VE-05):** registration and review are in place (NA-03). For VE-03, add the licence documents to `GET /api/v1/admin/organizations/{id}` and show them in the Manage panel on `/admin/organizations`; members upload from `/organizations/:id`. For VE-05, `organization.reviewed` is published on approve and reject (`organization_id`, `name`, `status`, `rejection_reason`).
 - **Hassan (HA-04):** the partner watchlist (`partner_watchlists`) is separate from the consumer one (`watchlists`). Watching a VIN with no history creates its `vehicles` row; the timeline still answers `vehicle: null` until the first record exists (`services/timeline.py:has_history`), so the page keeps offering Watch and hides the PDF button. Use the same helper if the consumer watch creates vehicles too.
-- **Everyone: keep the legal pages true.** The Privacy Policy already describes licence documents (BU-03), in-app notifications (BU-05) and VIN decoding through NHTSA vPIC (BU-09), as designed in ARCHITECTURE.md. If your card stores, shows or shares data differently, or adds browser storage (e.g. a language preference in HA-03), update `frontend/src/pages/legal/privacy.ts` / `terms.ts` and `LEGAL_UPDATED` in the same PR. Hassan: the Arabic text needs a native-speaker check in HA-03, and the pages' own language switch can hand over to the app-wide one.
+- **Everyone: keep the legal pages true.** The Privacy Policy already describes licence documents (VE-03), in-app notifications (VE-05) and VIN decoding through NHTSA vPIC (VE-09), as designed in ARCHITECTURE.md. If your card stores, shows or shares data differently, or adds browser storage (e.g. a language preference in HA-03), update `frontend/src/pages/legal/privacy.ts` / `terms.ts` and `LEGAL_UPDATED` in the same PR. Hassan: the Arabic text needs a native-speaker check in HA-03, and the pages' own language switch can hand over to the app-wide one.
 - **Entity roles need an approved organization:** since NA-03, `effective_role` only counts memberships of approved organizations. A pending registrant is `consumer` in the UI, but `require_org_role` still lets them manage their own registration.
 - **Hassan (HA-05):** the admin flagged-records queue can reuse AG-06: `GET /api/v1/admin/records?flagged=true` (all filters, sorting and paging) and the `/admin/records` page.
 - **Hassan (HA-03):** the new pages `RecordSearchPage.tsx` and `workshop/ImportRecordsPage.tsx` are English only, ready for their strings to move into i18n.
@@ -114,9 +114,9 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 - **Seed and test emails:** the email validator rejects reserved domains such as `.test` and `.local`. The seed's `@sijil.demo` addresses are fine. In tests, use `@example.ae`.
 
 ## Open items
-- Burhan: when wiring Caddy (BU-02), run uvicorn with `--proxy-headers` so per-IP limits see real clients (doc/SECURITY.md).
+- Veronika: when wiring Caddy (VE-02), run uvicorn with `--proxy-headers` so per-IP limits see real clients (doc/SECURITY.md).
 - A wrong-password login still shows the API's 401 in the console. That is the failure path, not a page load.
-- NA-03's review screen shows no licence documents until BU-03 lands.
+- NA-03's review screen shows no licence documents until VE-03 lands.
 - Entity admins can't reset a member's password (by design). Platform admins can, from `/admin/users` (NA-06).
 - Records from one import share one `created_at` (the database's `now()` is per transaction), so "newest first" orders a batch by record id, not file order.
 - `tests/test_partner_api.py::test_watch_lifecycle_get_post_put_delete` fails on some runs (seen on 2026-10-19 on `main`, then passed). Naser to check whether it is time-dependent.

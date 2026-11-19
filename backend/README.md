@@ -73,9 +73,9 @@ A workshop or dealership registers and starts **pending**. A platform admin appr
 | DELETE | `/api/v1/admin/organizations/{id}` | Platform admin | Really delete it and its memberships. Member accounts stay; service records keep the organization-name snapshot. |
 
 - `emirate` must be one of the seven emirates, in official English spelling (`doc/UAE_MARKET.md`).
-- Approve and reject publish `organization.reviewed` (`organization_id`, `name`, `status`, `rejection_reason`) through `app/services/events.py`, for notifications (BU-05).
+- Approve and reject publish `organization.reviewed` (`organization_id`, `name`, `status`, `rejection_reason`) through `app/services/events.py`, for notifications (VE-05).
 - Every registration, edit, review, resubmission and deletion writes an `audit_events` row.
-- Licence documents (BU-03) are not shown on the review screen yet.
+- Licence documents (VE-03) are not shown on the review screen yet.
 
 ## Organization members and staff accounts (NA-04)
 
@@ -94,7 +94,7 @@ An organization's active entity admins manage its members. Platform admins can d
 - An organization always keeps at least one active entity admin (409 `last_entity_admin`). This also applies to the admin endpoint `PATCH /admin/users/{id}/memberships/{membership_id}`. Changes lock the organization row, so two admins can't demote each other at the same moment.
 - Only entity roles can be granted here. Platform-admin accounts can't join an organization (409 `cannot_add_platform_admin`).
 - Entity admins can't reset a member's password: a member may be a personal account they don't own.
-- Every change writes an `audit_events` row (never the temporary password) and publishes `membership.added`, `membership.updated` or `membership.removed` (organization id and name, user id, role, status) for notifications (BU-05).
+- Every change writes an `audit_events` row (never the temporary password) and publishes `membership.added`, `membership.updated` or `membership.removed` (organization id and name, user id, role, status) for notifications (VE-05).
 
 ## Partner API (NA-05)
 
@@ -118,7 +118,7 @@ Active `entity_staff` and `entity_admin` members of an **approved** organization
 
 - One transaction per submission. It creates the vehicle on its first record and locks the vehicle row (`SELECT ... FOR UPDATE`). It then compares the reading with the effective history and inserts the record with its flag. Concurrent submissions for one VIN are serialized, so each flag is computed against everything committed before it (`tests/test_records_concurrency.py`).
 - **Mileage flag:** a reading is accepted but flagged when it does not fit the effective history. That means it is lower than the highest reading dated on or before it, or higher than a reading dated after it (a back-dated entry). Records replaced by a correction don't count.
-- **Event:** after commit the API publishes `record.added` through `app/services/events.py`, with a consumer-safe payload (VIN, record id, date, flag, corrected id). The WebSocket fan-out (BU-04) subscribes there.
+- **Event:** after commit the API publishes `record.added` through `app/services/events.py`, with a consumer-safe payload (VIN, record id, date, flag, corrected id). The WebSocket fan-out (VE-04) subscribes there.
 - Errors: 403 `organization_not_approved` / `forbidden`, 422 `invalid_vin` / `validation_error` (unknown or repeated work code, future date, odometer outside 0-2,000,000 km).
 
 ## Corrections (AG-04)

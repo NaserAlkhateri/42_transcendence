@@ -69,10 +69,10 @@ JSON responses also carry `Content-Security-Policy: default-src 'none'; frame-an
 
 | Card | Needed |
 | --- | --- |
-| **BU-02** Caddy | HTTPS for every browser and partner connection, with HTTP redirected to HTTPS. The same security headers for the frontend's static files, plus a CSP for the app, e.g. `default-src 'self'; frame-ancestors 'none'`. `request_body max_size` as a second limit. Run uvicorn with `--proxy-headers` (see Throttling). Keep PostgreSQL, Redis and MinIO off the public network. |
-| **BU-04** WebSockets | `wss://` only. Authenticate with the session cookie and check `Origin` on connect. Send a user only events they may see (watched VINs, their organization). Re-check the session on reconnect. |
-| **BU-03** Uploads | Check type by content (magic bytes), not only by extension. Cap the size on both ends. Store objects privately in MinIO under random names. Serve them only through an authorized route or a short-lived link, with `Content-Disposition: attachment`. Only platform admins delete, with an audit event. Uploads need their own limit above `MAX_REQUEST_BYTES`. |
-| **BU-08** CI | Run `pytest`, `npm test`, lint and `npm audit` on every PR. |
+| **VE-02** Caddy | HTTPS for every browser and partner connection, with HTTP redirected to HTTPS. The same security headers for the frontend's static files, plus a CSP for the app, e.g. `default-src 'self'; frame-ancestors 'none'`. `request_body max_size` as a second limit. Run uvicorn with `--proxy-headers` (see Throttling). Keep PostgreSQL, Redis and MinIO off the public network. |
+| **VE-04** WebSockets | `wss://` only. Authenticate with the session cookie and check `Origin` on connect. Send a user only events they may see (watched VINs, their organization). Re-check the session on reconnect. |
+| **VE-03** Uploads | Check type by content (magic bytes), not only by extension. Cap the size on both ends. Store objects privately in MinIO under random names. Serve them only through an authorized route or a short-lived link, with `Content-Disposition: attachment`. Only platform admins delete, with an audit event. Uploads need their own limit above `MAX_REQUEST_BYTES`. |
+| **VE-08** CI | Run `pytest`, `npm test`, lint and `npm audit` on every PR. |
 
 ## Reporting
 

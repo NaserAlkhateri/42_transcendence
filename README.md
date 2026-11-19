@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by amersha, haeltahi, nalkhate, bhajili.*
+*This project has been created as part of the 42 curriculum by amersha, haeltahi, nalkhate, vlyubick.*
 
 # Sijil - Vehicle History Platform
 
@@ -54,7 +54,7 @@ Every member is a full-stack developer and owns their features end to end (API +
 | --- | --- | --- |
 | Agegnew Mersha | PM + Full-stack Developer | Schema/ORM, VIN timeline, service records + mileage flags, corrections, PDF, advanced search, import/export, sprint coordination |
 | Naser | Product Owner + Full-stack Developer (Security) | Auth, users + roles, organizations, members/staff, partner API, security review, policy pages, acceptance |
-| Burhan | Technical Lead/Architect + Full-stack Developer (DevOps) | Architecture, Docker/Caddy/HTTPS, licence document uploads, WebSocket live updates, notifications, VIN decoder, CI/backups |
+| Veronika | Technical Lead/Architect + Full-stack Developer (DevOps) | Architecture, Docker/Caddy/HTTPS, licence document uploads, WebSocket live updates, notifications, VIN decoder, CI/backups |
 | Hassan | Full-stack Developer (Frontend) + QA Lead | App shell, design system, English/Arabic RTL, watchlist, admin review, entity dashboard, e2e/browser QA |
 
 Work is tracked in Trello (Transcendence workspace): `Backlog -> To Do -> In Progress -> Review -> Done`. Daily check-ins, peer reviews and a weekly demo. Every module card carries a checklist copied from the subject; a module is claimed only when every item is ticked. See `doc/TEAM.md` for the 8 planned full-stack tasks per member, test ownership and week-by-week objectives. Record tools/chat channel details and **actual** contributions before final evaluation.
@@ -75,9 +75,9 @@ Each member keeps their own entry up to date as their cards finish.
 Each feature has one end-to-end owner (API + UI + tests):
 - **Agegnew:** VIN lookup and timeline, service record submission with mileage flags, corrections, PDF report, advanced search, CSV/JSON import/export.
 - **Naser:** signup/login/profile, user CRUD and roles, organization registration/approval/CRUD (incl. delete), members and staff accounts, partner API with admin-issued keys, Privacy Policy/Terms.
-- **Burhan:** Docker/Caddy/HTTPS, licence document uploads (MinIO), WebSocket live updates, notifications, VIN decoder.
+- **Veronika:** Docker/Caddy/HTTPS, licence document uploads (MinIO), WebSocket live updates, notifications, VIN decoder.
 - **Hassan:** app shell and design system, English/Arabic RTL, watchlist, admin review (flags + audit), entity dashboard.
-- **Quality and release:** every member tests their own features; Hassan leads e2e and browser QA, Burhan CI and deploy smoke tests, Agegnew concurrency tests, Naser security tests.
+- **Quality and release:** every member tests their own features; Hassan leads e2e and browser QA, Veronika CI and deploy smoke tests, Agegnew concurrency tests, Naser security tests.
 
 ## 42 selected modules and points
 **Requirement:** at least **14 module points** (major = 2, minor = 1). Extra validated modules may count toward at most **5 bonus points**. These are **planned**, not yet earned.
@@ -85,17 +85,17 @@ Each feature has one end-to-end owner (API + UI + tests):
 | Claimed only when complete | Type | Points | Trello |
 | --- | --- | ---: | --- |
 | Framework for frontend **and** backend (React, FastAPI) | Major | 2 | HA-01, AG-01 |
-| Real-time features using WebSockets | Major | 2 | BU-04 |
+| Real-time features using WebSockets | Major | 2 | VE-04 |
 | Advanced permissions system (user CRUD, roles, role-based views) | Major | 2 | NA-02 |
 | Organization system (CRUD, add/remove members) | Major | 2 | NA-03, NA-04 |
 | Public API (secured key, rate limit, docs, 5+ endpoints, GET/POST/PUT/DELETE) | Major | 2 | NA-05 |
 | ORM | Minor | 1 | AG-01 |
 | Right-to-left language support (Arabic, full mirroring) | Minor | 1 | HA-03 |
 | Advanced search (filters, sorting, pagination) | Minor | 1 | AG-06 |
-| File upload and management (validation, preview, progress, delete, security) | Minor | 1 | BU-03 |
+| File upload and management (validation, preview, progress, delete, security) | Minor | 1 | VE-03 |
 | Support for additional browsers (Firefox and Edge) | Minor | 1 | HA-07 |
 | Custom design system (10+ reusable components) | Minor | 1 | HA-02 |
-| Complete notification system for create/update/delete | Minor (stretch) | 1 | BU-05 |
+| Complete notification system for create/update/delete | Minor (stretch) | 1 | VE-05 |
 | Data export and import (validation; CSV and JSON) | Minor (stretch) | 1 | AG-07 |
 | **Total planned** | **5 majors + 8 minors** | **18** | |
 

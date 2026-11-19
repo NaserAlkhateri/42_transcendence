@@ -1,5 +1,5 @@
 // Privacy Policy (NA-07). Every statement must match what the code does: when a feature changes what is
-// stored, shown or shared (licence uploads BU-03, VIN decoding BU-09, notifications BU-05, language
+// stored, shown or shared (licence uploads VE-03, VIN decoding VE-09, notifications VE-05, language
 // preference HA-03), update this text and LEGAL_UPDATED in the same pull request.
 
 import { LEGAL_UPDATED, type BilingualDocument } from './types'

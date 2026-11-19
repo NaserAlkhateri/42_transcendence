@@ -62,7 +62,7 @@ def get_membership(db: Session, organization_id: uuid.UUID, membership_id: uuid.
 
 
 def membership_payload(organization: Organization, membership: OrganizationMember) -> dict:
-    """For `membership.*` events (notifications, BU-05)."""
+    """For `membership.*` events (notifications, VE-05)."""
     return {
         "organization_id": str(organization.id),
         "organization_name": organization.name,
