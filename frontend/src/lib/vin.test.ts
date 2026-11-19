@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseVin } from './vin'
+import { INVALID_VIN_FRAGMENT_MESSAGE, parseVin, parseVinFragment, westernDigits } from './vin'
 
 // Same cases as backend/tests/test_vin.py: the backend stays authoritative, the UI only saves a round trip.
 describe('parseVin', () => {
@@ -30,5 +30,41 @@ describe('parseVin', () => {
 
   it('asks for a VIN when the input is blank', () => {
     expect(parseVin('   ')).toEqual({ ok: false, error: 'Enter a VIN.' })
+  })
+})
+
+// Mirrors the normalize_vin_fragment cases in backend/tests/test_vin.py.
+describe('parseVinFragment', () => {
+  it.each([
+    ['', ''],
+    ['   ', ''],
+    ['jtn', 'JTN'],
+    ['jtn-bk3 ek', 'JTNBK3EK'],
+    ['٣٠١٢٣٤٥', '3012345'], // Arabic-Indic digits
+    ['۳۰۱۲', '3012'], // Extended (Persian) digits
+    ['JTNBK3EK6N3012345', 'JTNBK3EK6N3012345'],
+  ])('normalizes %j to %j', (raw, vin) => {
+    expect(parseVinFragment(raw)).toEqual({ ok: true, vin })
+  })
+
+  it.each([
+    ['JTNBK3EK6N30123456', 'too long'],
+    ['JTO', 'contains O'],
+    ['I', 'contains I'],
+    ['Q1', 'contains Q'],
+    ['JTN%', 'LIKE wildcard'],
+    ['JT_N', 'underscore'],
+    ['JTM.HX', 'full stop'],
+    ['ÉTD', 'accented letter'],
+  ])('rejects %j (%s)', (raw) => {
+    expect(parseVinFragment(raw)).toEqual({ ok: false, error: INVALID_VIN_FRAGMENT_MESSAGE })
+  })
+})
+
+describe('westernDigits', () => {
+  it('maps both Arabic-Indic digit sets and leaves everything else alone', () => {
+    expect(westernDigits('٨٨٣٠٠ km')).toBe('88300 km')
+    expect(westernDigits('۲۰۲۴')).toBe('2024')
+    expect(westernDigits('2026-04-11')).toBe('2026-04-11')
   })
 })

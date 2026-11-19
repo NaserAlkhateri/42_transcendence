@@ -1,3 +1,4 @@
+import json
 from datetime import date, timedelta
 
 import pytest
@@ -150,12 +151,23 @@ def test_submitting_requires_sign_in_and_csrf(staff_client: TestClient, workshop
         ({"odometer_km": 2_000_001}, "validation_error"),
         ({"category": "inspection"}, "validation_error"),
         ({"service_date": (date.today() + timedelta(days=2)).isoformat()}, "validation_error"),
+        ({"notes": "Oil\u0000change"}, "validation_error"),  # PostgreSQL text cannot hold NUL
     ],
 )
 def test_invalid_submissions_are_rejected(staff_client: TestClient, workshop, db: Session, overrides, code) -> None:
     response = staff_client.post(records_url(workshop), json=body(**overrides), headers=csrf(staff_client))
     assert response.status_code == 422
     assert response.json()["error"]["code"] == code
+    assert db.scalar(select(ServiceRecord)) is None
+
+
+def test_lone_surrogate_in_notes_is_rejected(staff_client: TestClient, workshop, db: Session) -> None:
+    # Sent as raw JSON: the escape decodes to a lone surrogate, which is not valid UTF-8 and cannot be stored.
+    raw = json.dumps(body(notes="NOTES")).replace("NOTES", "Oil \\ud800 change")
+    headers = {**csrf(staff_client), "Content-Type": "application/json"}
+    response = staff_client.post(records_url(workshop), content=raw, headers=headers)
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
     assert db.scalar(select(ServiceRecord)) is None
 
 

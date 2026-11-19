@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ApiError, api, http, serverFieldErrors, setUnauthorizedHandler } from './api'
+import { ApiError, api, apiResponse, http, serverFieldErrors, setUnauthorizedHandler } from './api'
 
 function jsonResponse(status: number, body: unknown): Response {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -41,6 +41,43 @@ describe('api client', () => {
     expect(init?.method).toBe('POST')
     expect((init?.headers as Record<string, string>)['X-CSRF-Token']).toBe('tok123')
     expect(init?.body).toBe(JSON.stringify({ email: 'a@example.ae', password: 'x' }))
+  })
+
+  it('sends a raw body as is, with its own Content-Type and the CSRF header', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(200, { csrf_token: 'tok123' }))
+      .mockResolvedValueOnce(jsonResponse(200, { total_rows: 1 }))
+    const file = new Blob(['vin,service_date\n'], { type: 'application/vnd.ms-excel' })
+    await expect(api('/upload', { method: 'POST', rawBody: { data: file, contentType: 'text/csv' } }))
+      .resolves.toEqual({ total_rows: 1 })
+    const [url, init] = fetchMock.mock.calls[1]
+    expect(url).toBe('/api/v1/upload')
+    const headers = init?.headers as Record<string, string>
+    expect(headers['Content-Type']).toBe('text/csv')
+    expect(headers['X-CSRF-Token']).toBe('tok123')
+    expect(init?.body).toBe(file)
+  })
+
+  it('still sends JSON with a JSON Content-Type when no raw body is given', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(200, { csrf_token: 'tok123' }))
+      .mockResolvedValueOnce(jsonResponse(200, {}))
+    await http.put('/me', { full_name: 'Mariam Al Hashimi' })
+    const [, init] = fetchMock.mock.calls[1]
+    expect((init?.headers as Record<string, string>)['Content-Type']).toBe('application/json')
+    expect(init?.body).toBe(JSON.stringify({ full_name: 'Mariam Al Hashimi' }))
+  })
+
+  it('returns the Response itself for downloads and throws ApiError on failure', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('a,b\n', { status: 200, headers: { 'Content-Type': 'text/csv' } }))
+    const response = await apiResponse('/export')
+    await expect(response.text()).resolves.toBe('a,b\n')
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(422, { error: { code: 'export_too_large', message: 'Narrow the filters.' } }))
+    const error = (await apiResponse('/export').catch((e: unknown) => e)) as ApiError
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.code).toBe('export_too_large')
+    expect(error.message).toBe('Narrow the filters.')
   })
 
   it('turns the error envelope into an ApiError with field details', async () => {

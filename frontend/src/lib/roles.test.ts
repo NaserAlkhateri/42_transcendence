@@ -53,6 +53,31 @@ describe('record tools in the navigation', () => {
   })
 })
 
+describe('record search in the navigation', () => {
+  it('links entity roles to their organisation search and platform admins to every record', () => {
+    for (const role of ['entity_admin', 'entity_staff'] as const) {
+      expect(navItemsFor(user(role))).toContainEqual({ to: '/workshop/records', label: 'Search records' })
+      expect(navItemsFor(user(role)).map((item) => item.to)).not.toContain('/admin/records')
+    }
+    expect(navItemsFor(user('platform_admin'))).toContainEqual({ to: '/admin/records', label: 'Records' })
+    expect(navItemsFor(user('platform_admin')).map((item) => item.to)).not.toContain('/workshop/records')
+    const consumerLinks = navItemsFor(user('consumer')).map((item) => item.to)
+    expect(consumerLinks).not.toContain('/workshop/records')
+    expect(consumerLinks).not.toContain('/admin/records')
+  })
+})
+
+describe('record import in the navigation', () => {
+  it('is offered to entity admins and staff only', () => {
+    for (const role of ['entity_admin', 'entity_staff'] as const) {
+      expect(navItemsFor(user(role))).toContainEqual({ to: '/workshop/records/import', label: 'Import records' })
+    }
+    for (const role of ['consumer', 'platform_admin'] as const) {
+      expect(navItemsFor(user(role)).map((item) => item.to)).not.toContain('/workshop/records/import')
+    }
+  })
+})
+
 describe('organisation links in the navigation', () => {
   const labels = (u: User) => navItemsFor(u).map((item) => item.label)
   const member = (organization_status: 'pending' | 'approved' | 'rejected'): User => ({

@@ -33,6 +33,8 @@ export class ApiError extends Error {
 export interface ApiOptions {
   method?: HttpMethod
   body?: unknown
+  /** Send a file as the body as is, with its own Content-Type, instead of JSON (AG-07 import). */
+  rawBody?: { data: Blob | string; contentType: string }
   signal?: AbortSignal
   /** Milliseconds before the request is aborted. Default 15 s. */
   timeoutMs?: number
@@ -116,10 +118,13 @@ function withTimeout(outer: AbortSignal | undefined, timeoutMs: number) {
   }
 }
 
-export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+/** The successful Response itself, for callers that read something other than JSON (a file download).
+ *  Failures throw ApiError exactly like `api`. */
+export async function apiResponse(path: string, options: ApiOptions = {}): Promise<Response> {
   const method = options.method ?? 'GET'
   const headers: Record<string, string> = { Accept: 'application/json' }
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json'
+  if (options.rawBody) headers['Content-Type'] = options.rawBody.contentType
+  else if (options.body !== undefined) headers['Content-Type'] = 'application/json'
 
   const timeout = withTimeout(options.signal, options.timeoutMs ?? DEFAULT_TIMEOUT_MS)
   let response: Response
@@ -129,7 +134,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
       method,
       headers,
       credentials: 'same-origin',
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.rawBody ? options.rawBody.data : options.body === undefined ? undefined : JSON.stringify(options.body),
       signal: timeout.signal,
     })
   } catch (error) {
@@ -145,9 +150,8 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     timeout.cancel()
   }
 
-  if (response.status === 204) return undefined as T
-  const payload: unknown = await response.json().catch(() => null)
   if (!response.ok) {
+    const payload: unknown = await response.json().catch(() => null)
     if (response.status === 401 && !options.silent401) onUnauthorized?.()
     const error = (payload as { error?: { code: string; message: string; details?: FieldIssue[] } } | null)?.error
     if (response.status === 403 && error?.code === 'forbidden') onForbidden?.()
@@ -158,10 +162,16 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
       error?.details,
     )
   }
-  return payload as T
+  return response
 }
 
-type Opts = Omit<ApiOptions, 'method' | 'body'>
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+  const response = await apiResponse(path, options)
+  if (response.status === 204) return undefined as T
+  return (await response.json().catch(() => null)) as T
+}
+
+type Opts = Omit<ApiOptions, 'method' | 'body' | 'rawBody'>
 
 /** Shorthands so call sites read as intent. */
 export const http = {

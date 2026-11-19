@@ -2,6 +2,7 @@ import re
 
 # Same rule as the database CHECK constraint ck_vehicles_vin_format.
 VIN_PATTERN = re.compile(r"[A-HJ-NPR-Z0-9]{17}")
+_VIN_FRAGMENT = re.compile(r"[A-HJ-NPR-Z0-9]{0,17}")
 _SEPARATORS = re.compile(r"[\s-]+")
 _ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 
@@ -17,7 +18,18 @@ def normalize_vin(raw: str) -> str:
     The ISO 3779 check digit is deliberately not enforced: it is mandatory only for North American
     VINs, and GCC-market imports from Japan or Europe legitimately fail it.
     """
-    vin = _SEPARATORS.sub("", raw).translate(_ARABIC_DIGITS).upper()
-    if not VIN_PATTERN.fullmatch(vin):
+    vin = _SEPARATORS.sub("", raw).translate(_ARABIC_DIGITS)
+    # ASCII is checked before upper-casing, which turns letters like "ß" into valid-looking ones ("SS").
+    if not vin.isascii() or not VIN_PATTERN.fullmatch(vin.upper()):
         raise InvalidVinError("A VIN has exactly 17 letters or digits and never contains I, O or Q.")
-    return vin
+    return vin.upper()
+
+
+def normalize_vin_fragment(raw: str) -> str:
+    """Part of a VIN typed into a search box, normalized like `normalize_vin` but 0 to 17 characters long.
+    Blank input gives ""."""
+    fragment = _SEPARATORS.sub("", raw).translate(_ARABIC_DIGITS)
+    # ASCII is checked before upper-casing, which turns letters like "ß" into valid-looking ones ("SS").
+    if not fragment.isascii() or not _VIN_FRAGMENT.fullmatch(fragment.upper()):
+        raise InvalidVinError("Enter up to 17 letters or digits of the VIN. A VIN never contains I, O or Q.")
+    return fragment.upper()

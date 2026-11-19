@@ -1,6 +1,6 @@
 """In-process domain events (e.g. `record.added`), published after the change is committed.
 
-Until the WebSocket fan-out exists (BU-04 subscribes a Redis publisher here), nothing listens in production.
+Until the WebSocket fan-out exists (VE-04 subscribes a Redis publisher here), nothing listens in production.
 Subscribers must be quick and must not raise: a failing subscriber is logged and the others still run.
 """
 

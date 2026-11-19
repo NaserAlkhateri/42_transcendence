@@ -85,7 +85,7 @@ def to_admin_detail(db: Session, organization: Organization) -> AdminOrganizatio
 
 
 def review_payload(organization: Organization) -> dict:
-    """For `organization.reviewed` events (notifications, BU-05): no licence number or member data."""
+    """For `organization.reviewed` events (notifications, VE-05): no licence number or member data."""
     return {
         "organization_id": str(organization.id),
         "name": organization.name,

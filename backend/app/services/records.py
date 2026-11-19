@@ -3,10 +3,11 @@ mileage flag against the effective history and inserts the record, so concurrent
 are serialized and every flag is computed against everything committed before it."""
 
 import uuid
+from collections import defaultdict
 from collections.abc import Iterable
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -29,16 +30,32 @@ def lock_vehicle(db: Session, vin: str) -> Vehicle:
     return db.scalars(select(Vehicle).where(Vehicle.vin == vin).with_for_update()).one()
 
 
+def _corrected_ids() -> Select:
+    return select(ServiceRecord.corrects_record_id).where(ServiceRecord.corrects_record_id.is_not(None))
+
+
 def effective_readings(db: Session, vehicle_id: uuid.UUID, *, excluding: uuid.UUID | None = None) -> list[tuple[date, int]]:
     """(service_date, odometer_km) of the vehicle's records that no correction replaces. `excluding` drops a
     record about to be corrected, so the correction is compared with the history it will be part of."""
-    corrected = select(ServiceRecord.corrects_record_id).where(ServiceRecord.corrects_record_id.is_not(None))
     query = select(ServiceRecord.service_date, ServiceRecord.odometer_km).where(
-        ServiceRecord.vehicle_id == vehicle_id, ServiceRecord.id.not_in(corrected)
+        ServiceRecord.vehicle_id == vehicle_id, ServiceRecord.id.not_in(_corrected_ids())
     )
     if excluding is not None:
         query = query.where(ServiceRecord.id != excluding)
     return [(row.service_date, row.odometer_km) for row in db.execute(query)]
+
+
+def effective_readings_by_vin(db: Session, vins: Iterable[str]) -> dict[str, list[tuple[date, int]]]:
+    """`effective_readings` for several vehicles in one query, keyed by canonical VIN (the AG-07 import preview)."""
+    query = (
+        select(Vehicle.vin, ServiceRecord.service_date, ServiceRecord.odometer_km)
+        .join(Vehicle, Vehicle.id == ServiceRecord.vehicle_id)
+        .where(Vehicle.vin.in_(list(vins)), ServiceRecord.id.not_in(_corrected_ids()))
+    )
+    readings: dict[str, list[tuple[date, int]]] = defaultdict(list)
+    for row in db.execute(query):
+        readings[row.vin].append((row.service_date, row.odometer_km))
+    return dict(readings)
 
 
 def submit_record(db: Session, *, organization: Organization, staff: User, vin: str, fields: RecordFields) -> ServiceRecord:

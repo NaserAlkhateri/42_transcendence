@@ -1,6 +1,6 @@
 """Fixed-window rate limiter for the partner API (NA-05) and authentication (NA-06).
 
-In-process: correct for the single API instance we run today. When the stack gets Redis (BU-02/BU-04), move
+In-process: correct for the single API instance we run today. When the stack gets Redis (VE-02/VE-04), move
 the counters there so every instance shares them; the `hit` interface stays the same."""
 
 import math

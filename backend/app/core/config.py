@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     login_window_seconds: int = 900
     signups_per_ip: int = 10  # per hour
     password_failures_per_user: int = 10  # wrong current passwords on /me/password, per login_window_seconds
-    max_request_bytes: int = 1_000_000  # JSON API bodies; file uploads (BU-03) need their own, larger limit
+    max_request_bytes: int = 1_000_000  # JSON API bodies; file uploads (VE-03) need their own, larger limit
 
 
 @lru_cache

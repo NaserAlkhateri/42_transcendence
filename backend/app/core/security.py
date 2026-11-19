@@ -1,4 +1,4 @@
-"""HTTP hardening applied to every API response (NA-06). Caddy (BU-02) terminates TLS and should send the same
+"""HTTP hardening applied to every API response (NA-06). Caddy (VE-02) terminates TLS and should send the same
 headers for the frontend's static files; see doc/SECURITY.md."""
 
 from collections.abc import Awaitable, Callable

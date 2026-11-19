@@ -21,4 +21,4 @@ export interface LegalDocument {
 export type BilingualDocument = Record<LegalLanguage, LegalDocument>
 
 /** Date of the current text. Change it whenever the wording changes. */
-export const LEGAL_UPDATED = { en: '18 Oct 2026', ar: '18 أكتوبر 2026' }
+export const LEGAL_UPDATED = { en: '20 Oct 2026', ar: '20 أكتوبر 2026' }
