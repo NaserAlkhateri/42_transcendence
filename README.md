@@ -2,7 +2,7 @@
 
 # Sijil - Vehicle History Platform
 
-> **Starter documentation only.** Replace the four `*_42_LOGIN` placeholders with the real 42 logins and update implementation details as features are built.
+> **Implementation in progress.** The architecture and interface baseline is accepted; feature status is tracked in `doc/progress.md`. Replace the four `*_42_LOGIN` placeholders with the real 42 logins before evaluation.
 
 ## Description
 Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for the 42 `ft_transcendence` project (subject v21.2), similar to Carfax in the US. Consumers enter a VIN, see the decoded car details and its service timeline, download a vehicle-only PDF and watch VINs for new records. Dealers and workshops register with their business licence; once a platform admin approves them, their staff submit append-only maintenance and repair records in a few clicks. Mileage decreases are **accepted and visibly flagged**; corrections remain linked to the original record. Outside businesses such as insurers can read vehicle histories through a key-protected partner API. This demo has **no official UAE data integration**.
@@ -21,7 +21,7 @@ Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for t
 
 ## Read these five files first (contributors)
 1. `README.md` - 42 compliance, module points, starting instructions and project conventions.
-2. [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md) - Stack, services, database, security and deployment contracts.
+2. [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md) - Repository layout, stack, data model, HTTP/WebSocket contracts, security and deployment decisions.
 3. [`doc/FEATURES.md`](doc/FEATURES.md) - Product requirements, roles, flows and acceptance checks.
 4. [`doc/TEAM.md`](doc/TEAM.md) - Roles, equally estimated Trello work and three-week delivery gates.
 5. [`doc/UAE_MARKET.md`](doc/UAE_MARKET.md) - UAE market rules for UI wording, formats, theme and demo data. Read it before any frontend work.

@@ -1,12 +1,12 @@
 # Sijil - Progress
 
-Last updated: 2026-10-18 (week 2-3: NA-03 to NA-05 merged, NA-06 and NA-07 in Review).
+Last updated: 2026-11-19 (BU-01 architecture and interface contracts completed in the current working branch).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
 ## Summary
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
-- **Burhan's week-1 cards have not started** (BU-01 contracts, BU-02 Docker Compose + Caddy). Until BU-02 lands there is no single-command start, which is part of the week-1 demo gate.
+- **BU-01 is ready for review:** `doc/ARCHITECTURE.md` now fixes the repository boundaries, topology, data ownership, HTTP conventions and the browser WebSocket protocol; `contracts/websocket.asyncapi.json` is its machine-readable socket contract. BU-02 Docker Compose + Caddy remains open, so there is still no single-command start.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
 - **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for BU-03.
 - **NA-07 Privacy Policy and Terms of Service are in Review** on `feat/na-07-legal-pages` (built on NA-06). Both pages have real Sijil-specific content in English and Arabic (with a language switch and right-to-left layout), are linked from the footer, and are linked where people agree to them (signup, business registration).
@@ -26,7 +26,7 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | NA-02 Users, roles, role-based views | Naser | Done | Turning a consumer into entity staff needs memberships (NA-04) |
 | HA-01 Frontend bootstrap and app shell | Hassan | Done | |
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
-| BU-01 Architecture and contracts | Burhan | To Do | |
+| BU-01 Architecture and contracts | Burhan | Review | Repository/API decisions in `doc/ARCHITECTURE.md`; WebSocket v1 in `contracts/websocket.asyncapi.json`; contract tests in `backend/tests/test_contracts.py` |
 | BU-02 Docker Compose, Caddy, HTTPS | Burhan | To Do | Blocks the week-1 single-command start |
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for BU-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |

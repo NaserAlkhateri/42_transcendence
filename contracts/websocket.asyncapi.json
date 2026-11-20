@@ -1,0 +1,360 @@
+{
+  "asyncapi": "2.6.0",
+  "id": "urn:sijil:websocket:v1",
+  "info": {
+    "title": "Sijil browser WebSocket API",
+    "version": "1.0.0",
+    "description": "Authenticated live invalidation messages for vehicle timelines and the notification centre. Durable state remains in the REST API.",
+    "contact": {
+      "name": "Sijil project team"
+    }
+  },
+  "tags": [
+    {
+      "name": "realtime",
+      "description": "Browser live updates"
+    }
+  ],
+  "defaultContentType": "application/json",
+  "servers": {
+    "sameOrigin": {
+      "url": "{host}",
+      "protocol": "wss",
+      "description": "The same host that serves the Sijil web application.",
+      "variables": {
+        "host": {
+          "default": "localhost",
+          "description": "Caddy HTTPS host, with an optional port."
+        }
+      },
+      "security": [
+        {
+          "sessionCookie": []
+        }
+      ]
+    }
+  },
+  "channels": {
+    "/api/v1/ws": {
+      "description": "One authenticated, same-origin browser connection. Up to 20 concurrent VIN subscriptions are allowed per connection.",
+      "publish": {
+        "operationId": "sendServerMessage",
+        "summary": "The Sijil API sends acknowledgements and live invalidations.",
+        "message": {
+          "oneOf": [
+            {"$ref": "#/components/messages/ConnectionReady"},
+            {"$ref": "#/components/messages/TimelineSubscribed"},
+            {"$ref": "#/components/messages/TimelineUnsubscribed"},
+            {"$ref": "#/components/messages/Pong"},
+            {"$ref": "#/components/messages/RecordAdded"},
+            {"$ref": "#/components/messages/NotificationCreated"},
+            {"$ref": "#/components/messages/ProtocolError"}
+          ]
+        }
+      },
+      "subscribe": {
+        "operationId": "receiveClientCommand",
+        "summary": "The Sijil API receives subscription and heartbeat commands.",
+        "message": {
+          "oneOf": [
+            {"$ref": "#/components/messages/TimelineSubscribe"},
+            {"$ref": "#/components/messages/TimelineUnsubscribe"},
+            {"$ref": "#/components/messages/Ping"}
+          ]
+        }
+      },
+      "x-close-codes": {
+        "4400": "Malformed or unsupported command",
+        "4401": "Session absent or expired",
+        "4403": "Origin or authorization rejected",
+        "4408": "Heartbeat timeout",
+        "4429": "Subscription or message rate limit exceeded"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "httpApiKey",
+        "in": "cookie",
+        "name": "sijil_session",
+        "description": "Secure, HttpOnly, SameSite=Lax browser session cookie. The Origin header must match the application origin."
+      }
+    },
+    "messages": {
+      "ConnectionReady": {
+        "name": "connection.ready",
+        "messageId": "connection.ready.v1",
+        "title": "Connection accepted",
+        "payload": {"$ref": "#/components/schemas/ConnectionReady"}
+      },
+      "TimelineSubscribe": {
+        "name": "timeline.subscribe",
+        "messageId": "timeline.subscribe.v1",
+        "title": "Subscribe to one VIN timeline",
+        "payload": {"$ref": "#/components/schemas/TimelineSubscribe"}
+      },
+      "TimelineUnsubscribe": {
+        "name": "timeline.unsubscribe",
+        "messageId": "timeline.unsubscribe.v1",
+        "title": "Unsubscribe from one VIN timeline",
+        "payload": {"$ref": "#/components/schemas/TimelineUnsubscribe"}
+      },
+      "TimelineSubscribed": {
+        "name": "timeline.subscribed",
+        "messageId": "timeline.subscribed.v1",
+        "title": "Timeline subscription acknowledged",
+        "payload": {"$ref": "#/components/schemas/TimelineSubscribed"}
+      },
+      "TimelineUnsubscribed": {
+        "name": "timeline.unsubscribed",
+        "messageId": "timeline.unsubscribed.v1",
+        "title": "Timeline unsubscription acknowledged",
+        "payload": {"$ref": "#/components/schemas/TimelineUnsubscribed"}
+      },
+      "Ping": {
+        "name": "ping",
+        "messageId": "ping.v1",
+        "title": "Client heartbeat",
+        "payload": {"$ref": "#/components/schemas/Ping"}
+      },
+      "Pong": {
+        "name": "pong",
+        "messageId": "pong.v1",
+        "title": "Server heartbeat reply",
+        "payload": {"$ref": "#/components/schemas/Pong"}
+      },
+      "RecordAdded": {
+        "name": "record.added",
+        "messageId": "record.added.v1",
+        "title": "A subscribed timeline changed",
+        "summary": "Consumer-safe invalidation only; the client refetches the timeline REST resource.",
+        "payload": {"$ref": "#/components/schemas/RecordAdded"}
+      },
+      "NotificationCreated": {
+        "name": "notification.created",
+        "messageId": "notification.created.v1",
+        "title": "The current user's notification centre changed",
+        "summary": "The client refetches notification state; no unrestricted notification payload crosses the socket.",
+        "payload": {"$ref": "#/components/schemas/NotificationCreated"}
+      },
+      "ProtocolError": {
+        "name": "error",
+        "messageId": "error.v1",
+        "title": "Recoverable command or protocol error",
+        "payload": {"$ref": "#/components/schemas/ProtocolError"}
+      }
+    },
+    "schemas": {
+      "ProtocolVersion": {
+        "type": "integer",
+        "enum": [1]
+      },
+      "Uuid": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "Timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "RFC 3339 UTC timestamp."
+      },
+      "Vin": {
+        "type": "string",
+        "pattern": "^[A-HJ-NPR-Z0-9]{17}$",
+        "description": "Normalized uppercase VIN (chassis number)."
+      },
+      "ConnectionReady": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "id", "type", "occurred_at", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "id": {"$ref": "#/components/schemas/Uuid"},
+          "type": {"type": "string", "enum": ["connection.ready"]},
+          "occurred_at": {"$ref": "#/components/schemas/Timestamp"},
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["connection_id", "heartbeat_seconds", "max_timeline_subscriptions"],
+            "properties": {
+              "connection_id": {"$ref": "#/components/schemas/Uuid"},
+              "heartbeat_seconds": {"type": "integer", "minimum": 5, "example": 25},
+              "max_timeline_subscriptions": {"type": "integer", "minimum": 1, "example": 20}
+            }
+          }
+        }
+      },
+      "TimelineSubscribe": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "type", "request_id", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "type": {"type": "string", "enum": ["timeline.subscribe"]},
+          "request_id": {"$ref": "#/components/schemas/Uuid"},
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["vin"],
+            "properties": {"vin": {"$ref": "#/components/schemas/Vin"}}
+          }
+        }
+      },
+      "TimelineUnsubscribe": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "type", "request_id", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "type": {"type": "string", "enum": ["timeline.unsubscribe"]},
+          "request_id": {"$ref": "#/components/schemas/Uuid"},
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["vin"],
+            "properties": {"vin": {"$ref": "#/components/schemas/Vin"}}
+          }
+        }
+      },
+      "TimelineSubscribed": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "id", "type", "occurred_at", "request_id", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "id": {"$ref": "#/components/schemas/Uuid"},
+          "type": {"type": "string", "enum": ["timeline.subscribed"]},
+          "occurred_at": {"$ref": "#/components/schemas/Timestamp"},
+          "request_id": {"$ref": "#/components/schemas/Uuid"},
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["vin"],
+            "properties": {"vin": {"$ref": "#/components/schemas/Vin"}}
+          }
+        }
+      },
+      "TimelineUnsubscribed": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "id", "type", "occurred_at", "request_id", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "id": {"$ref": "#/components/schemas/Uuid"},
+          "type": {"type": "string", "enum": ["timeline.unsubscribed"]},
+          "occurred_at": {"$ref": "#/components/schemas/Timestamp"},
+          "request_id": {"$ref": "#/components/schemas/Uuid"},
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["vin"],
+            "properties": {"vin": {"$ref": "#/components/schemas/Vin"}}
+          }
+        }
+      },
+      "Ping": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "type", "request_id", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "type": {"type": "string", "enum": ["ping"]},
+          "request_id": {"$ref": "#/components/schemas/Uuid"},
+          "data": {"type": "object", "additionalProperties": false}
+        }
+      },
+      "Pong": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "id", "type", "occurred_at", "request_id", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "id": {"$ref": "#/components/schemas/Uuid"},
+          "type": {"type": "string", "enum": ["pong"]},
+          "occurred_at": {"$ref": "#/components/schemas/Timestamp"},
+          "request_id": {"$ref": "#/components/schemas/Uuid"},
+          "data": {"type": "object", "additionalProperties": false}
+        }
+      },
+      "RecordAdded": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "id", "type", "occurred_at", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "id": {"$ref": "#/components/schemas/Uuid"},
+          "type": {"type": "string", "enum": ["record.added"]},
+          "occurred_at": {"$ref": "#/components/schemas/Timestamp"},
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["vin", "record_id", "service_date", "is_mileage_flagged", "corrects_record_id"],
+            "properties": {
+              "vin": {"$ref": "#/components/schemas/Vin"},
+              "record_id": {"$ref": "#/components/schemas/Uuid"},
+              "service_date": {"type": "string", "format": "date"},
+              "is_mileage_flagged": {"type": "boolean"},
+              "corrects_record_id": {
+                "oneOf": [
+                  {"$ref": "#/components/schemas/Uuid"},
+                  {"type": "null"}
+                ]
+              }
+            }
+          }
+        }
+      },
+      "NotificationCreated": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "id", "type", "occurred_at", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "id": {"$ref": "#/components/schemas/Uuid"},
+          "type": {"type": "string", "enum": ["notification.created"]},
+          "occurred_at": {"$ref": "#/components/schemas/Timestamp"},
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["notification_id", "event_type", "created_at"],
+            "properties": {
+              "notification_id": {"$ref": "#/components/schemas/Uuid"},
+              "event_type": {"type": "string", "minLength": 1, "maxLength": 64},
+              "created_at": {"$ref": "#/components/schemas/Timestamp"}
+            }
+          }
+        }
+      },
+      "ProtocolError": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "id", "type", "occurred_at", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "id": {"$ref": "#/components/schemas/Uuid"},
+          "type": {"type": "string", "enum": ["error"]},
+          "occurred_at": {"$ref": "#/components/schemas/Timestamp"},
+          "request_id": {
+            "oneOf": [
+              {"$ref": "#/components/schemas/Uuid"},
+              {"type": "null"}
+            ]
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "message"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": ["invalid_message", "unsupported_version", "unknown_type", "invalid_vin", "subscription_limit"]
+              },
+              "message": {"type": "string", "minLength": 1, "maxLength": 200}
+            }
+          }
+        }
+      }
+    }
+  }
+}
