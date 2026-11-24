@@ -5,6 +5,7 @@ from app.api.v1 import (
     admin_organizations,
     admin_users,
     auth,
+    documents,
     members,
     organizations,
     record_search,
@@ -23,6 +24,8 @@ api_router.include_router(records.router)
 api_router.include_router(record_search.router)
 api_router.include_router(record_transfer.router)
 api_router.include_router(organizations.router)
+api_router.include_router(documents.router)
+api_router.include_router(documents.admin_router)
 api_router.include_router(members.router)
 api_router.include_router(admin_users.router)
 api_router.include_router(admin_organizations.router)

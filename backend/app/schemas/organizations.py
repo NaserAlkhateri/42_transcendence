@@ -6,6 +6,7 @@ from pydantic import AfterValidator, BaseModel, StringConstraints
 
 from app.models import MemberRole, MemberStatus, OrganizationKind, OrganizationStatus
 from app.schemas.auth import Email, FullName
+from app.schemas.documents import DocumentOut
 
 # Official English spellings (doc/UAE_MARKET.md). Addresses are emirate + area; there are no postcodes.
 Emirate = Literal["Abu Dhabi", "Dubai", "Sharjah", "Ajman", "Umm Al Quwain", "Ras Al Khaimah", "Fujairah"]
@@ -74,6 +75,7 @@ class AdminOrganizationOut(OrganizationOut):
 
 class AdminOrganizationDetail(AdminOrganizationOut):
     members: list[OrganizationMemberOut]
+    documents: list[DocumentOut]
 
 
 class OrganizationPage(BaseModel):

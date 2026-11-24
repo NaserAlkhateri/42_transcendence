@@ -6,6 +6,25 @@ x-database-env: &database-env
   PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
 
 services:
+  minio:
+    build:
+      context: .
+      dockerfile: deploy/Minio.Dockerfile
+    command: [server, /data]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-sijil-storage}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+      MINIO_BROWSER: 'off'
+    volumes:
+      - minio_data:/data
+    networks: [data]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, 'http://127.0.0.1:9000/minio/health/ready']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
   db:
     image: postgres:16-alpine
     environment:
@@ -53,9 +72,15 @@ services:
       <<: *database-env
       COOKIE_SECURE: 'true'
       MAX_REQUEST_BYTES: ${MAX_REQUEST_BYTES:-1000000}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-sijil-storage}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD in .env}
+      MINIO_SECURE: 'false'
     networks: [proxy, data]
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
       init:
         condition: service_completed_successfully
@@ -96,5 +121,6 @@ networks:
 
 volumes:
   postgres_data:
+  minio_data:
   caddy_data:
   caddy_config:

@@ -2,12 +2,14 @@
 // stored, shown or shared (licence uploads VE-03, VIN decoding VE-09, notifications VE-05, language
 // preference HA-03), update this text and LEGAL_UPDATED in the same pull request.
 
-import { LEGAL_UPDATED, type BilingualDocument } from './types'
+import type { BilingualDocument } from './types'
+
+const PRIVACY_UPDATED = { en: '24 Nov 2026', ar: '24 نوفمبر 2026' }
 
 export const PRIVACY_POLICY: BilingualDocument = {
   en: {
     title: 'Privacy Policy',
-    updated: LEGAL_UPDATED.en,
+    updated: PRIVACY_UPDATED.en,
     intro: [
       'Sijil is a demo vehicle service-history platform built as a student project for the 42 curriculum. Approved workshops and dealerships record services against a car’s VIN (chassis number), and anyone can look up that history. This policy explains what personal data Sijil keeps, why, who can see it and for how long.',
       'Sijil is not a government service and is not connected to any official UAE database, insurer or dealer system. All demo data is fictional. Please don’t enter real personal data you wouldn’t want stored in a demo.',
@@ -87,8 +89,8 @@ export const PRIVACY_POLICY: BilingualDocument = {
           'Service records are permanent. Vehicle history is append-only so it can be trusted: a mistake is fixed with a linked correction, never by editing or deleting the original.',
           'Accounts are kept until they are deleted. Sessions stop working after 7 days at most.',
           'When an account is deleted, its sessions, memberships, watchlists and notifications are deleted with it. Service records the person entered stay, showing the staff name as recorded at the time. Audit-log entries stay, including the email address of the person who acted.',
-          'When a business is deleted, its memberships and documents go with it; its service records stay under its name as recorded.',
-          'Licence documents are kept while the business exists, unless a platform admin deletes them first.',
+          'A platform admin removes a business’s licence documents before deleting the business. Its memberships are deleted with it. Service records stay under its name as recorded.',
+          'When a platform admin removes a licence document, the file becomes unavailable and its removal is logged. The business’s entity admins can see the file name and removal notice until the business is deleted.',
         ],
       },
       {
@@ -140,7 +142,7 @@ export const PRIVACY_POLICY: BilingualDocument = {
 
   ar: {
     title: 'سياسة الخصوصية',
-    updated: LEGAL_UPDATED.ar,
+    updated: PRIVACY_UPDATED.ar,
     intro: [
       'سجل منصة تجريبية لسجلات صيانة المركبات، أُنشئت مشروعاً طلابياً ضمن منهج 42. تسجّل الورش والوكالات المعتمدة خدمات الصيانة برقم الشاصي (VIN) للسيارة، ويمكن لأي شخص الاطلاع على هذا السجل. توضح هذه السياسة البيانات الشخصية التي تحتفظ بها سجل، وسبب ذلك، ومن يمكنه رؤيتها، ومدة الاحتفاظ بها.',
       'سجل ليست خدمة حكومية وغير مرتبطة بأي قاعدة بيانات رسمية في الإمارات أو بأي شركة تأمين أو وكالة. جميع البيانات التجريبية خيالية. يُرجى عدم إدخال بيانات شخصية حقيقية لا ترغب في تخزينها في نسخة تجريبية.',
@@ -220,8 +222,8 @@ export const PRIVACY_POLICY: BilingualDocument = {
           'سجلات الصيانة دائمة. تاريخ المركبة يُضاف إليه فقط حتى يكون جديراً بالثقة: يُصحَّح الخطأ بتصحيح مرتبط بالسجل الأصلي، ولا يُعدَّل الأصل أو يُحذف أبداً.',
           'تُحفظ الحسابات حتى حذفها. وتتوقف الجلسات عن العمل بعد 7 أيام كحد أقصى.',
           'عند حذف حساب، تُحذف معه جلساته وعضوياته وقوائم متابعته وإشعاراته. وتبقى سجلات الصيانة التي أدخلها الشخص، ويظهر فيها اسم الموظف كما سُجِّل وقتها. كما تبقى قيود سجل التدقيق، بما فيها البريد الإلكتروني للشخص الذي قام بالإجراء.',
-          'عند حذف منشأة، تُحذف معها عضوياتها ومستنداتها، وتبقى سجلات الصيانة الخاصة بها باسمها كما سُجِّل.',
-          'تُحفظ مستندات الرخصة ما دامت المنشأة موجودة، ما لم يحذفها مسؤول المنصة قبل ذلك.',
+          'يحذف مسؤول المنصة مستندات رخصة المنشأة قبل حذف المنشأة. وتُحذف عضوياتها معها، بينما تبقى سجلات الصيانة باسمها كما سُجِّل.',
+          'عندما يحذف مسؤول المنصة مستند رخصة، يصبح الملف غير متاح ويُسجَّل الحذف. ويمكن لمسؤولي المنشأة رؤية اسم الملف وإشعار حذفه حتى تُحذف المنشأة.',
         ],
       },
       {

@@ -67,14 +67,17 @@ JSON responses also carry `Content-Security-Policy: default-src 'none'; frame-an
 
 ## HTTPS deployment (VE-02)
 
-VE-02 configures Caddy as the only published service. It redirects HTTP to HTTPS, applies security headers and a CSP to the SPA, and enforces `MAX_REQUEST_BYTES` on API traffic. Uvicorn trusts forwarded headers from the subnet shared with Caddy. PostgreSQL is on a separate internal network. Future services such as Redis and MinIO must also keep their ports private.
+VE-02 configures Caddy as the only published service. It redirects HTTP to HTTPS and applies security headers and a CSP to the SPA. Uvicorn trusts forwarded headers from the subnet shared with Caddy. PostgreSQL and MinIO are on a separate internal network.
+
+## Licence documents (VE-03)
+
+Only the document upload route has a 5 MiB request limit; other requests retain `MAX_REQUEST_BYTES`. FastAPI checks the limit while reading and verifies that the content decodes as the claimed format. PostgreSQL stores metadata under random MinIO keys; clients never receive those keys or public links. Downloads require a session, a role and the correct organisation scope, and are served as private, non-cacheable attachments. The SPA renders PDF previews on a canvas and restricts image previews to validated PNG/JPEG blobs. Platform-admin removal records an audit event and hides the file before the private object is purged.
 
 ## Still to do in other cards
 
 | Card | Needed |
 | --- | --- |
 | **VE-04** WebSockets | `wss://` only. Authenticate with the session cookie and check `Origin` on connect. Send a user only events they may see (watched VINs, their organization). Re-check the session on reconnect. |
-| **VE-03** Uploads | Check type by content (magic bytes), not only by extension. Cap the size on both ends. Store objects privately in MinIO under random names. Serve them only through an authorized route or a short-lived link, with `Content-Disposition: attachment`. Only platform admins delete, with an audit event. Uploads need their own limit above `MAX_REQUEST_BYTES`. |
 | **VE-08** CI | Run `pytest`, `npm test`, lint and `npm audit` on every PR. |
 
 ## Reporting

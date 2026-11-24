@@ -1,6 +1,6 @@
 # Sijil - Progress
 
-Last updated: 2026-11-23 (VE-02 deployment ready for review; AG-06 advanced search and AG-07 import/export merged; NA-03 to NA-07 merged).
+Last updated: 2026-11-24 (VE-03 licence documents ready for review; AG-06 advanced search and AG-07 import/export merged; NA-03 to NA-07 merged).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
@@ -29,6 +29,7 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
 | VE-01 Architecture and contracts | Veronika | To Do | Was BU-01 (Burhan) |
 | VE-02 Docker Compose, Caddy, HTTPS | Veronika | Ready for review | `docker compose up --build -d` runs migrations, seed and the HTTPS stack. See the [README](../README.md#instructions). |
+| VE-03 Private licence documents | Veronika | Ready for review | Registration and organisation uploads, private MinIO, platform-admin preview and audited removal. Builds on VE-02. |
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for VE-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
@@ -103,7 +104,7 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 - **Hassan (HA-04):** the Watch button lives in `src/components/WatchVinButton.tsx`. Guests are sent to log in and come back to the VIN. Wire the signed-in state to the watchlist API there.
 - **Veronika (VE-02):** the session and CSRF cookies are `Secure`, so the stack has to be served over HTTPS through Caddy. Caddy should route `/api/*` to FastAPI and everything else to the frontend build. `COOKIE_SECURE` and `SESSION_TTL_HOURS` are in `backend/.env.example`.
 - **Agegnew (AG-03 onward):** use `require_org_role` for record submission. Deleting a user leaves their service records in place, with `staff_id` set to NULL and the stored `staff_name` kept.
-- **Veronika (VE-03, VE-05):** registration and review are in place (NA-03). For VE-03, add the licence documents to `GET /api/v1/admin/organizations/{id}` and show them in the Manage panel on `/admin/organizations`; members upload from `/organizations/:id`. For VE-05, `organization.reviewed` is published on approve and reject (`organization_id`, `name`, `status`, `rejection_reason`).
+- **Veronika (VE-05):** `organization.reviewed` is published on approve and reject (`organization_id`, `name`, `status`, `rejection_reason`).
 - **Hassan (HA-04):** the partner watchlist (`partner_watchlists`) is separate from the consumer one (`watchlists`). Watching a VIN with no history creates its `vehicles` row; the timeline still answers `vehicle: null` until the first record exists (`services/timeline.py:has_history`), so the page keeps offering Watch and hides the PDF button. Use the same helper if the consumer watch creates vehicles too.
 - **Everyone: keep the legal pages true.** The Privacy Policy already describes licence documents (VE-03), in-app notifications (VE-05) and VIN decoding through NHTSA vPIC (VE-09), as designed in ARCHITECTURE.md. If your card stores, shows or shares data differently, or adds browser storage (e.g. a language preference in HA-03), update `frontend/src/pages/legal/privacy.ts` / `terms.ts` and `LEGAL_UPDATED` in the same PR. Hassan: the Arabic text needs a native-speaker check in HA-03, and the pages' own language switch can hand over to the app-wide one.
 - **Entity roles need an approved organization:** since NA-03, `effective_role` only counts memberships of approved organizations. A pending registrant is `consumer` in the UI, but `require_org_role` still lets them manage their own registration.
@@ -116,7 +117,6 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 ## Open items
 - Veronika: when wiring Caddy (VE-02), run uvicorn with `--proxy-headers` so per-IP limits see real clients (doc/SECURITY.md).
 - A wrong-password login still shows the API's 401 in the console. That is the failure path, not a page load.
-- NA-03's review screen shows no licence documents until VE-03 lands.
 - Entity admins can't reset a member's password (by design). Platform admins can, from `/admin/users` (NA-06).
 - Records from one import share one `created_at` (the database's `now()` is per transaction), so "newest first" orders a batch by record id, not file order.
 - `tests/test_partner_api.py::test_watch_lifecycle_get_post_put_delete` fails on some runs (seen on 2026-10-19 on `main`, then passed). Naser to check whether it is time-dependent.

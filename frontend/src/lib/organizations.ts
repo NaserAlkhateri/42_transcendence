@@ -3,6 +3,7 @@
 
 import type { BadgeVariant } from '../components/ui'
 import type { MemberRole } from '../auth/auth-context'
+import type { LicenceDocument } from './licenceDocuments'
 import type { FieldErrors } from './validation'
 
 export type OrganizationKind = 'workshop' | 'dealership'
@@ -57,6 +58,7 @@ export interface AdminOrganization extends Organization {
 
 export interface AdminOrganizationDetail extends AdminOrganization {
   members: OrganizationMember[]
+  documents: LicenceDocument[]
 }
 
 export interface OrganizationPage {

@@ -11,6 +11,7 @@ from tests.factories import make_org, make_record, make_user, make_vehicle
 EXPECTED_TABLES = {
     "users", "sessions", "organizations", "organization_members", "vehicles", "service_records",
     "attachments", "watchlists", "notifications", "api_keys", "partner_watchlists", "audit_events",
+    "organization_documents",
 }
 
 
