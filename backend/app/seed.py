@@ -28,9 +28,11 @@ from app.models import (
     User,
     UserRole,
     Vehicle,
+    Watchlist,
 )
 
 DEMO_DOMAIN = "sijil.demo"  # .demo is not a real top-level domain, so no real inbox exists
+DEMO_WATCH_VIN = "JTMHX01J5M4012345"
 
 
 class OrgSpec(NamedTuple):
@@ -121,6 +123,12 @@ def seed(db: Session, demo_password: str) -> None:
         has_history = db.scalar(select(ServiceRecord.id).where(ServiceRecord.vehicle_id == vehicle.id).limit(1))
         if has_history is None:
             _add_records(db, vehicle, spec.records, orgs, users)
+        if spec.vin == DEMO_WATCH_VIN:
+            consumer_id = users["consumer"].id
+            if db.scalar(select(Watchlist.id).where(
+                Watchlist.user_id == consumer_id, Watchlist.vehicle_id == vehicle.id,
+            )) is None:
+                db.add(Watchlist(user_id=consumer_id, vehicle_id=vehicle.id))
     db.flush()
 
 

@@ -6,6 +6,17 @@ x-database-env: &database-env
   PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
 
 services:
+  redis:
+    image: redis:8-alpine
+    command: [redis-server, --save, '', --appendonly, 'no']
+    networks: [data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+    restart: unless-stopped
+
   db:
     image: postgres:16-alpine
     environment:
@@ -47,15 +58,19 @@ services:
       - app.main:app
       - --host=0.0.0.0
       - --port=8000
+      - --ws-max-size=4096
       - --proxy-headers
       - --forwarded-allow-ips=${SIJIL_PROXY_SUBNET:-172.30.252.0/24}
     environment:
       <<: *database-env
       COOKIE_SECURE: 'true'
       MAX_REQUEST_BYTES: ${MAX_REQUEST_BYTES:-1000000}
+      REDIS_URL: redis://redis:6379/0
     networks: [proxy, data]
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       init:
         condition: service_completed_successfully

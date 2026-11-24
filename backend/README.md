@@ -17,6 +17,16 @@ uv run uvicorn app.main:app --reload
 
 API docs: http://localhost:8000/api/v1/docs · health: http://localhost:8000/health
 
+For local WebSocket development via the Vite proxy, set `COOKIE_SECURE=false` in `backend/.env`. Leave `REDIS_URL` unset for an in-process relay, or set it to an isolated Redis instance for fan-out across local workers. The Compose deployment uses secure cookies, Caddy HTTPS/WSS, and an internal Redis service.
+
+## Live timelines and watch alerts (VE-04)
+
+`/api/v1/ws` requires a valid session cookie and the UI's same-origin `Origin` header. See the [AsyncAPI contract](../contracts/websocket.asyncapi.json) for `connection.ready`, timeline subscribe/unsubscribe, `record.added`, `notification.created`, `ping` and `pong`. One Redis subscriber per API process routes events by VIN or by recipient. Heartbeats recheck the session, and the client reconnects and refetches the current REST state after a gap. Signed-out users can still read timelines through REST.
+
+`GET /api/v1/notifications` returns the signed-in user's most recent 20 watch alerts. A record, correction or imported record creates its enabled-watch alerts in the same PostgreSQL transaction. Socket messages carry an invalidation rather than the full notification. Watch controls (HA-04) and read/unread management (VE-05) are separate tasks.
+
+Set `TEST_REDIS_URL` to a disposable Redis instance to include the cross-subscriber fan-out integration check in `pytest`.
+
 ## Authentication (NA-01)
 
 - Email/password with Argon2id hashes. Signup always creates a `consumer`.

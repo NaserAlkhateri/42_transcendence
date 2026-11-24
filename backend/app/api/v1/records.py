@@ -12,7 +12,7 @@ from app.db.session import get_db
 from app.models import MemberRole, Organization, OrganizationStatus, ServiceRecord, User, Vehicle
 from app.schemas.records import CorrectionSubmission, OrgRecordOut, RecordSubmission, WorkCodeOut
 from app.schemas.vehicle import TimelineRecord
-from app.services import events
+from app.services.record_notifications import create_watch_notices, publish_record_added
 from app.services.records import AlreadyCorrectedError, submit_correction, submit_record
 from app.services.vin import InvalidVinError, normalize_vin
 from app.services.work_codes import WORK_CODES
@@ -72,8 +72,10 @@ def create_record(organization_id: uuid.UUID, body: RecordSubmission, user: Curr
     organization = submitting_organization(db, user, organization_id)
     vin = canonical_vin(body.vin)
     record = submit_record(db, organization=organization, staff=user, vin=vin, fields=body)
+    notices = create_watch_notices(db, record, vin)
+    payload = record_added_payload(record, vin)
     db.commit()
-    events.publish("record.added", record_added_payload(record, vin))
+    publish_record_added(payload, notices)
     return to_org_record_out(record, vin)
 
 
@@ -100,8 +102,10 @@ def create_correction(
     except AlreadyCorrectedError as exc:
         raise ApiError(409, "already_corrected", "This record already has a correction. Correct that one instead.") from exc
     vin = db.scalar(select(Vehicle.vin).where(Vehicle.id == correction.vehicle_id))
+    notices = create_watch_notices(db, correction, vin)
+    payload = record_added_payload(correction, vin)
     db.commit()
-    events.publish("record.added", record_added_payload(correction, vin))
+    publish_record_added(payload, notices)
     return to_org_record_out(correction, vin)
 
 

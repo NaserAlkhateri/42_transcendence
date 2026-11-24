@@ -21,6 +21,7 @@ import {
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { parseVin } from '../lib/vin'
 import { useWorkCodes } from '../lib/workCodes'
+import { useLiveStatus, useTimelineRevision } from '../live/live-context'
 
 /** /vehicles/:vin — public, consumer-safe service history for one VIN. */
 export function VehicleTimelinePage() {
@@ -53,18 +54,21 @@ function Timeline({ vin }: { vin: string }) {
   const query = filtersToParams(filters).toString()
   const rangeError = filters.from && filters.to && filters.from > filters.to ? RANGE_ERROR : undefined
   const [state, setState] = useState<LoadState>()
+  const revision = useTimelineRevision(vin)
+  const liveStatus = useLiveStatus()
 
   useEffect(() => {
     if (rangeError) return
     const controller = new AbortController()
     http
       .get<VehicleTimeline>(`/vehicles/${vin}/timeline${query ? `?${query}` : ''}`, { signal: controller.signal })
-      .then((data) => setState({ query, data }))
+      .then((data) => { if (!controller.signal.aborted) setState({ query, data }) })
       .catch((error: unknown) => {
-        if (!controller.signal.aborted) setState({ query, error: errorMessage(error) })
+        if (!controller.signal.aborted) setState((previous) => previous?.query === query && 'data' in previous
+          ? previous : { query, error: errorMessage(error) })
       })
     return () => controller.abort()
-  }, [vin, query, rangeError])
+  }, [vin, query, rangeError, revision])
 
   const current = state?.query === query ? state : undefined
   const data = current && 'data' in current ? current.data : undefined
@@ -84,6 +88,9 @@ function Timeline({ vin }: { vin: string }) {
           <p className="text-ink-600">
             VIN <span className="font-mono font-semibold text-ink-800">{vin}</span>
           </p>
+          {liveStatus === 'live' || liveStatus === 'reconnecting' ? (
+            <p role="status" className="text-sm text-ink-600">{liveStatus === 'live' ? 'Live updates' : 'Reconnecting live updates…'}</p>
+          ) : null}
         </div>
         {data?.vehicle ? (
           // The report always covers the full history in English and Arabic, whatever filters are set here.

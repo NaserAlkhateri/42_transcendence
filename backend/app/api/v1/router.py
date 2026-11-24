@@ -6,6 +6,7 @@ from app.api.v1 import (
     admin_users,
     auth,
     members,
+    notifications,
     organizations,
     record_search,
     record_transfer,
@@ -19,6 +20,7 @@ api_router = APIRouter(dependencies=[Depends(verify_csrf)])
 api_router.include_router(auth.router)
 api_router.include_router(auth.me_router)
 api_router.include_router(vehicles.router)
+api_router.include_router(notifications.router)
 api_router.include_router(records.router)
 api_router.include_router(record_search.router)
 api_router.include_router(record_transfer.router)

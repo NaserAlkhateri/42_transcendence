@@ -36,7 +36,7 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-Choose two different passwords and keep `.env` local. Quote values containing literal `$` or `#` with single quotes in `.env`. The first build pulls base images and the locked dependencies. Compose waits for PostgreSQL to be ready, runs Alembic and loads the fictional demo data, then starts FastAPI and Caddy. `docker compose ps -a` should show a healthy `db` and `api`, a running `caddy`, and `init` with `Exited (0)`.
+Choose two different passwords and keep `.env` local. Quote values containing literal `$` or `#` with single quotes in `.env`. The first build pulls base images and the locked dependencies. Compose starts PostgreSQL and Redis, runs Alembic and loads the fictional demo data, then starts FastAPI and Caddy. `docker compose ps -a` should show healthy `db`, `redis` and `api` services, a running `caddy`, and `init` with `Exited (0)`.
 
 ### Open the local HTTPS demo
 
@@ -50,7 +50,7 @@ curl --cacert "$sijil_tls_dir/root.crt" --fail https://localhost/health
 
 The response should report `status` and `database` as `ok`. Follow the [Caddy local HTTPS instructions](https://caddyserver.com/docs/running#local-https-with-docker) to trust that certificate in your browser or system, then open [https://localhost](https://localhost) in Chrome. The API docs are at [https://localhost/api/v1/docs](https://localhost/api/v1/docs) and partner docs at [https://localhost/api/partner/v1/docs](https://localhost/api/partner/v1/docs). Try VIN `JTMHX01J5M4012345` or sign in as `consumer@sijil.demo` with the demo password from `.env`. See [the demo account list](backend/README.md#database-and-demo-data) for other roles and VINs. On an existing database the seed preserves existing users' passwords and data.
 
-`docker compose logs init api caddy` shows startup errors. `docker compose down` stops the stack and preserves data and the local CA in Docker volumes. Caddy is the only service with host ports. It redirects HTTP to HTTPS, serves the React build and proxies `/api/*` and `/health` to FastAPI. The `/api/v1/ws` path also goes through this proxy and supports the WebSocket upgrade once the backend endpoint is implemented in VE-04.
+`docker compose logs init api redis caddy` shows startup errors. `docker compose down` stops the stack and preserves data and the local CA in Docker volumes. Caddy is the only service with host ports. It redirects HTTP to HTTPS, serves the React build, and proxies `/api/*`, including `wss://localhost/api/v1/ws`, and `/health` to FastAPI.
 
 For a hosted instance, set `SIJIL_HOST` to the public DNS hostname, set `SIJIL_BIND_IP` to the appropriate host interface, and set `SEED_DEMO_DATA=false` before the first start. Point DNS to the host and open TCP 80 and 443 so Caddy can obtain a public certificate. Use a fresh database for hosting. Turning the seed off on an existing demo database leaves the previous demo users in place.
 
@@ -87,6 +87,7 @@ Each member keeps their own entry up to date as their cards finish.
   - Advanced search (AG-06) and CSV/JSON import and export (AG-07), described under "Module notes" below.
   - Project management: set up the Trello board and cards, coordinated the weekly plan, and tracked progress in [`doc/progress.md`](doc/progress.md).
 - **Veronika (Technical Lead + full-stack):** VE-02 Docker Compose deployment, Caddy HTTPS and same-origin routing, automatic migrations and demo seed, and deployment documentation.
+  - VE-04 authenticated WebSocket fan-out over Redis, live vehicle timeline and watch alerts, and recovery after disconnects.
 
 ## Features and ownership
 Each feature has one end-to-end owner (API + UI + tests):
@@ -123,6 +124,8 @@ Not claiming: three-language i18n (English + Arabic only), GDPR minor (its confi
 ### Module notes
 Each module owner adds how their module is built and how to demonstrate it. API details are in [`backend/README.md`](backend/README.md).
 
+**Real-time features (VE-04, Veronika):** Sign in as `consumer@sijil.demo` and open VIN `JTMHX01J5M4012345`. This demo account already watches that VIN. In a separate browser session, sign in as `falcon.staff@sijil.demo`, then submit a record for that VIN in **New service record**. The consumer's timeline and notification badge update without a page refresh. Take the consumer window offline, submit another record from the workshop window, then bring the consumer window back online. The socket resubscribes and the timeline and recent notifications catch up through REST. See the [WebSocket contract](contracts/websocket.asyncapi.json).
+
 **Advanced search (AG-06, Agegnew):** workshops and platform admins need to find records across many cars, not one VIN at a time.
 - **Pages:** workshop staff search their own organisation's records at `/workshop/records`. Platform admins search every organisation at `/admin/records`.
 - **Filters:** part of a VIN, make, model, model year, service date, odometer range, category, work codes, mileage flag, originals or corrections, corrected or not, staff name, and organisation (admins only).
@@ -154,4 +157,4 @@ Each module owner adds how their module is built and how to demonstrate it. API 
 ## Resources and AI use
 References: the official `ft_transcendence` subject v21.2; [FastAPI documentation](https://fastapi.tiangolo.com/); [SQLAlchemy](https://docs.sqlalchemy.org/); [Alembic](https://alembic.sqlalchemy.org/); [React](https://react.dev/); [Docker Compose](https://docs.docker.com/compose/); [Caddy](https://caddyserver.com/docs/); [NHTSA vPIC API](https://vpic.nhtsa.dot.gov/api/); ISO 3779 (VIN structure).
 
-For VE-02, AI assisted with drafting the Dockerfiles, Compose and Caddy configuration, the startup instructions, and the deployment checks. Record other AI use here as those changes are reviewed. Each contributor should be able to explain their implementation and checks during peer evaluation.
+For VE-02, AI assisted with drafting the Dockerfiles, Compose and Caddy configuration, the startup instructions, and the deployment checks. For VE-04, it assisted with wiring Redis, the authenticated WebSocket API, reconnect and refresh behaviour, and testing. Record other AI use here as those changes are reviewed. Each contributor should be able to explain their implementation and checks during peer evaluation.

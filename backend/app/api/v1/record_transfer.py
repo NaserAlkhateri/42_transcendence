@@ -19,7 +19,7 @@ from app.core.errors import ApiError, error_body
 from app.db.session import get_db
 from app.models import Organization, User
 from app.schemas.record_transfer import ImportReport, ImportResult
-from app.services import events
+from app.services.record_notifications import create_watch_notices, publish_record_added
 from app.services.audit import record_audit
 from app.services.record_export import (
     MAX_EXPORT_IDS,
@@ -192,9 +192,9 @@ def import_records(
         {"count": len(saved), "flagged": flagged, "format": file.format},
     )
     # Read the records before the commit expires them; afterwards each one would be loaded again.
-    payloads = [record_added_payload(record, vin) for record, vin in saved]
+    publications = [(record_added_payload(record, vin), create_watch_notices(db, record, vin)) for record, vin in saved]
     result = ImportResult(imported=len(saved), flagged=flagged, record_ids=[record.id for record, _ in saved])
     db.commit()
-    for payload in payloads:
-        events.publish("record.added", payload)
+    for payload, notices in publications:
+        publish_record_added(payload, notices)
     return JSONResponse(status_code=201, content=result.model_dump(mode="json"))

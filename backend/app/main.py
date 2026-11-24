@@ -1,11 +1,16 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import HTMLResponse
 
 from app.api import health, partner
 from app.api.v1.router import api_router
+from app.api.v1.websocket import router as websocket_router
+from app.core.config import get_settings
 from app.core.errors import install_error_handlers
 from app.core.security import install_security
+from app.services.realtime import realtime
 
 API_PREFIX = "/api/v1"
 
@@ -24,6 +29,13 @@ unknown or revoked key answers `401`.
 Full guide with examples: `doc/PARTNER_API.md` in the repository."""
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with realtime(get_settings().redis_url) as hub:
+        app.state.realtime = hub
+        yield
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="Sijil API",
@@ -31,11 +43,13 @@ def create_app() -> FastAPI:
         docs_url=f"{API_PREFIX}/docs",
         redoc_url=None,
         openapi_url=f"{API_PREFIX}/openapi.json",
+        lifespan=lifespan,
     )
     install_error_handlers(app)
     install_security(app)
     app.include_router(health.router)
     app.include_router(api_router, prefix=API_PREFIX)
+    app.include_router(websocket_router)
     # Key-authenticated, no cookies: deliberately outside api_router and its CSRF check.
     app.include_router(partner.router, prefix=partner.PARTNER_PREFIX)
     install_partner_docs(app)

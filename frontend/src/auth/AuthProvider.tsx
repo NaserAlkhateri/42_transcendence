@@ -80,9 +80,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const dismissSessionExpired = useCallback(() => setSessionExpired(false), [])
 
+  const refreshSession = useCallback<AuthState['refreshSession']>(async (expectedUserId, signal) => {
+    const { user: fresh } = await http.get<{ user: User | null }>('/auth/session', { silent401: true, signal })
+    setUser((current) => {
+      if (signal?.aborted || current?.id !== expectedUserId) return current
+      if (!fresh) setSessionExpired(true)
+      return JSON.stringify(current) === JSON.stringify(fresh) ? current : fresh
+    })
+  }, [])
+
   const value = useMemo<AuthState>(
-    () => ({ user, signup, login, logout, setUser, sessionExpired, dismissSessionExpired }),
-    [user, signup, login, logout, sessionExpired, dismissSessionExpired],
+    () => ({ user, signup, login, logout, setUser, refreshSession, sessionExpired, dismissSessionExpired }),
+    [user, signup, login, logout, refreshSession, sessionExpired, dismissSessionExpired],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

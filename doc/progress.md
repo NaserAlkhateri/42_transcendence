@@ -29,6 +29,7 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
 | VE-01 Architecture and contracts | Veronika | To Do | Was BU-01 (Burhan) |
 | VE-02 Docker Compose, Caddy, HTTPS | Veronika | Ready for review | `docker compose up --build -d` runs migrations, seed and the HTTPS stack. See the [README](../README.md#instructions). |
+| VE-04 WebSocket live updates | Veronika | Ready for review | Authenticated WSS, Redis fan-out, live timeline and watch alerts, refetch on reconnect. Builds on VE-02. |
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for VE-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
