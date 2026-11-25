@@ -74,11 +74,23 @@ def test_websocket_subscriptions_and_private_notifications(app: FastAPI, monkeyp
             assert message["type"] == "notification.created"
             assert message["data"]["notification_id"] == payload["notification_id"]
             assert "user_id" not in message["data"]
+        events.publish("notification.read_state_changed", {"user_id": str(owner)})
+        message = a.receive_json()
+        assert message["type"] == "notification.read_state_changed" and message["data"] == {}
+        events.publish("notification.created", private_b)
+        assert b.receive_json()["type"] == "notification.created"
         send(a, "timeline.unsubscribe", {"vin": VIN})
         assert a.receive_json()["type"] == "timeline.unsubscribed"
         events.publish("record.added", record_payload(VIN))
         events.publish("notification.created", private_a)
         assert a.receive_json()["type"] == "notification.created"
+        # Wait for the server to close both peers before TestClient cancels its transport.
+        for ws in (a, b):
+            send(ws, "unsupported", {})
+            assert ws.receive_json()["type"] == "error"
+            with pytest.raises(WebSocketDisconnect) as exc:
+                ws.receive_json()
+            assert exc.value.code == 4400
     assert not app.state.realtime.by_user and not app.state.realtime.by_vin
 
 
@@ -152,13 +164,13 @@ def test_committed_record_creates_only_enabled_watch_alerts(client: TestClient, 
         "work_codes": ["OIL_CHANGE"], "notes": "private note",
     })
     assert response.status_code == 201, response.text
-    assert client.get("/api/v1/notifications").json() == []
+    assert client.get("/api/v1/notifications").json()["items"] == []
     client.cookies.clear()
     assert login(client, watcher.email).status_code == 200
-    [notice] = client.get("/api/v1/notifications").json()
+    [notice] = client.get("/api/v1/notifications").json()["items"]
     assert notice["vin"] == VIN and notice["record_id"] == response.json()["id"]
     assert db.get(Notification, UUID(notice["id"])).user_id == watcher.id
     assert "notes" not in notice and "user_id" not in notice
     client.cookies.clear()
     assert login(client, muted.email).status_code == 200
-    assert client.get("/api/v1/notifications").json() == []
+    assert client.get("/api/v1/notifications").json()["items"] == []

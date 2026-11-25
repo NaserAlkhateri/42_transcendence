@@ -48,6 +48,7 @@
             {"$ref": "#/components/messages/Pong"},
             {"$ref": "#/components/messages/RecordAdded"},
             {"$ref": "#/components/messages/NotificationCreated"},
+            {"$ref": "#/components/messages/NotificationReadStateChanged"},
             {"$ref": "#/components/messages/ProtocolError"}
           ]
         }
@@ -137,6 +138,12 @@
         "title": "The current user's notification centre changed",
         "summary": "The client refetches notification state; no unrestricted notification payload crosses the socket.",
         "payload": {"$ref": "#/components/schemas/NotificationCreated"}
+      },
+      "NotificationReadStateChanged": {
+        "name": "notification.read_state_changed",
+        "messageId": "notification.read_state_changed.v1",
+        "title": "The recipient's read state changed",
+        "payload": {"$ref": "#/components/schemas/NotificationReadStateChanged"}
       },
       "ProtocolError": {
         "name": "error",
@@ -324,6 +331,18 @@
               "created_at": {"$ref": "#/components/schemas/Timestamp"}
             }
           }
+        }
+      },
+      "NotificationReadStateChanged": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["v", "id", "type", "occurred_at", "data"],
+        "properties": {
+          "v": {"$ref": "#/components/schemas/ProtocolVersion"},
+          "id": {"$ref": "#/components/schemas/Uuid"},
+          "type": {"type": "string", "enum": ["notification.read_state_changed"]},
+          "occurred_at": {"$ref": "#/components/schemas/Timestamp"},
+          "data": {"type": "object", "additionalProperties": false}
         }
       },
       "ProtocolError": {

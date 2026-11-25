@@ -23,6 +23,7 @@ from app.schemas.organizations import (
 )
 from app.services import events
 from app.services.audit import record_audit
+from app.services.notifications import organization_notices, publish_notices
 from app.services.organizations import (
     apply_changes,
     get_organization,
@@ -114,7 +115,9 @@ def update_organization(
         except IntegrityError as exc:
             db.rollback()
             raise licence_taken_error() from exc
+        notices = organization_notices(db, organization, "organization.updated", actor_id=admin.id)
         db.commit()
+        publish_notices(notices)
     return to_admin_detail(db, organization)
 
 
@@ -134,7 +137,9 @@ def approve_organization(organization_id: uuid.UUID, admin: PlatformAdmin, db: D
         db, admin, "organization.approved", "organization", organization.id,
         {"changes": {"status": [str(previous), "approved"]}},
     )
+    notices = organization_notices(db, organization, "organization.reviewed", actor_id=admin.id)
     db.commit()
+    publish_notices(notices)
     events.publish("organization.reviewed", review_payload(organization))
     return to_admin_detail(db, organization)
 
@@ -157,7 +162,9 @@ def reject_organization(
         db, admin, "organization.rejected", "organization", organization.id,
         {"changes": {"status": [str(previous), "rejected"]}, "reason": body.reason},
     )
+    notices = organization_notices(db, organization, "organization.reviewed", actor_id=admin.id)
     db.commit()
+    publish_notices(notices)
     events.publish("organization.reviewed", review_payload(organization))
     return to_admin_detail(db, organization)
 
@@ -181,6 +188,9 @@ def delete_organization(organization_id: uuid.UUID, admin: PlatformAdmin, db: Db
             "active_members": member_count,
         },
     )
+    # Snapshot recipients before the membership rows cascade.
+    notices = organization_notices(db, organization, "organization.deleted", actor_id=admin.id)
     db.expunge(organization)
     db.execute(delete(Organization).where(Organization.id == organization_id))
     db.commit()
+    publish_notices(notices)

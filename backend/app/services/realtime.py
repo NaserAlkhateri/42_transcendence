@@ -48,11 +48,13 @@ def frame(kind: str, data: dict, request_id: str | None = None) -> dict:
 
 
 class Publication(BaseModel):
-    type: Literal["record.added", "notification.created"]
+    type: Literal["record.added", "notification.created", "notification.read_state_changed"]
     data: dict
     recipient: UUID | None = None
 
     def public_data(self) -> dict:
+        if self.type == "notification.read_state_changed":
+            return {}
         model = RecordAdded if self.type == "record.added" else NotificationCreated
         return model.model_validate(self.data).model_dump(mode="json")
 
@@ -182,9 +184,9 @@ async def realtime(relay_url: str | None):
             hub.reset_peers()
 
     def forward(kind: str, payload: dict) -> None:
-        if kind not in ("record.added", "notification.created"):
+        if kind not in ("record.added", "notification.created", "notification.read_state_changed"):
             return
-        event = Publication(type=kind, data=payload, recipient=payload.get("user_id") if kind == "notification.created" else None)
+        event = Publication(type=kind, data=payload, recipient=payload.get("user_id") if kind != "record.added" else None)
         event.data = event.public_data()
         if publisher is None:
             loop.call_soon_threadsafe(hub.deliver, event)

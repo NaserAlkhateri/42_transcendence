@@ -23,7 +23,15 @@ For local WebSocket development via the Vite proxy, set `COOKIE_SECURE=false` in
 
 `/api/v1/ws` requires a valid session cookie and the UI's same-origin `Origin` header. See the [AsyncAPI contract](../contracts/websocket.asyncapi.json) for `connection.ready`, timeline subscribe/unsubscribe, `record.added`, `notification.created`, `ping` and `pong`. One Redis subscriber per API process routes events by VIN or by recipient. Heartbeats recheck the session, and the client reconnects and refetches the current REST state after a gap. Signed-out users can still read timelines through REST.
 
-`GET /api/v1/notifications` returns the signed-in user's most recent 20 watch alerts. A record, correction or imported record creates its enabled-watch alerts in the same PostgreSQL transaction. Socket messages carry an invalidation rather than the full notification. Watch controls (HA-04) and read/unread management (VE-05) are separate tasks.
+## Notification centre (VE-05)
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/notifications?unread=false&page=1&page_size=20` | Own inbox, newest first, with `items`, filtered `total` and global `unread_count`. Maximum page size is 50. |
+| PATCH | `/api/v1/notifications/{id}` | Send `{"read": true}` or `{"read": false}` to set one item's `read_at`. |
+| POST | `/api/v1/notifications/read-all` | Mark the signed-in user's current unread notices as read. |
+
+The service stores notices in the same PostgreSQL transaction as the triggering action. Records, corrections and imports notify enabled VIN watchers. Registrations and resubmissions notify active platform admins. Organisation edits, review decisions and deletion notify active members. Membership creation, edits and removal notify the affected account. Administrative account edits and password resets notify the affected account. No-op edits do not create new notices. The read endpoints are scoped to the recipient and mutations require CSRF. WebSocket invalidations (`notification.created` and `notification.read_state_changed`) go only to that recipient and refresh their inbox and badge across sessions. Watchlist editing is tracked separately in HA-04.
 
 Set `TEST_REDIS_URL` to a disposable Redis instance to include the cross-subscriber fan-out integration check in `pytest`.
 

@@ -25,6 +25,7 @@ from app.schemas.organizations import (
 )
 from app.services import events
 from app.services.audit import record_audit
+from app.services.notifications import member_notice, publish_notices
 from app.services.organizations import get_organization, member_out, members_of, require_another_admin
 
 router = APIRouter(prefix="/organizations/{organization_id}/members", tags=["organization members"])
@@ -107,7 +108,9 @@ def add_member(organization_id: uuid.UUID, body: MemberAdd, user: CurrentUser, d
     if already is not None:
         raise ApiError(409, "already_member", "This person is already a member.")
     membership = add_membership(db, user, organization, member, body.role, "membership.added")
+    notices = member_notice(db, organization, member.id, "membership.added")
     db.commit()
+    publish_notices(notices)
     events.publish("membership.added", membership_payload(organization, membership))
     return member_out(membership, member)
 
@@ -132,7 +135,9 @@ def create_staff_account(
         db.rollback()
         raise ApiError(409, "email_taken", "An account with this email already exists. Add it as a member instead.") from exc
     membership = add_membership(db, user, organization, member, body.role, "membership.staff_account_created")
+    notices = member_notice(db, organization, member.id, "membership.added")
     db.commit()
+    publish_notices(notices)
     events.publish("membership.added", membership_payload(organization, membership))
     return StaffAccountCreated(member=member_out(membership, member), temporary_password=temporary_password)
 
@@ -159,7 +164,9 @@ def update_member(
             db, user, "membership.updated", "organization_member", membership.id,
             {"organization_id": str(organization.id), "user_id": str(member.id), "changes": changes},
         )
+        notices = member_notice(db, organization, member.id, "membership.updated")
         db.commit()
+        publish_notices(notices)
         events.publish("membership.updated", membership_payload(organization, membership))
     return member_out(membership, member)
 
@@ -177,6 +184,8 @@ def remove_member(organization_id: uuid.UUID, membership_id: uuid.UUID, user: Cu
         {"organization_id": str(organization.id), "user_id": str(member.id), "email": member.email,
          "role": str(membership.role)},
     )
+    notices = member_notice(db, organization, member.id, "membership.removed")
     db.execute(delete(OrganizationMember).where(OrganizationMember.id == membership.id))
     db.commit()
+    publish_notices(notices)
     events.publish("membership.removed", payload)

@@ -16,6 +16,7 @@ from app.db.session import get_db
 from app.models import MemberRole, Organization, OrganizationMember, OrganizationStatus, UserRole
 from app.schemas.organizations import OrganizationOut, OrganizationRegistration, OrganizationUpdate
 from app.services.audit import record_audit
+from app.services.notifications import organization_notices, publish_notices
 from app.services.organizations import apply_changes, get_organization, licence_taken_error
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
@@ -55,7 +56,9 @@ def register_organization(body: OrganizationRegistration, user: CurrentUser, db:
         raise licence_taken_error() from exc
     db.add(OrganizationMember(organization_id=organization.id, user_id=user.id, role=MemberRole.ENTITY_ADMIN))
     record_audit(db, user, "organization.registered", "organization", organization.id, {"name": organization.name})
+    notices = organization_notices(db, organization, "organization.registered", actor_id=user.id)
     db.commit()
+    publish_notices(notices)
     return organization
 
 
@@ -87,7 +90,9 @@ def update_organization(organization_id: uuid.UUID, body: OrganizationUpdate, us
         except IntegrityError as exc:
             db.rollback()
             raise licence_taken_error() from exc
+        notices = organization_notices(db, organization, "organization.updated", actor_id=user.id)
         db.commit()
+        publish_notices(notices)
     return organization
 
 
@@ -101,6 +106,8 @@ def resubmit_organization(organization_id: uuid.UUID, user: CurrentUser, db: DbS
     organization.status = OrganizationStatus.PENDING
     organization.rejection_reason = None
     record_audit(db, user, "organization.resubmitted", "organization", organization.id, {})
+    notices = organization_notices(db, organization, "organization.resubmitted", actor_id=user.id)
     db.commit()
+    publish_notices(notices)
     return organization
 

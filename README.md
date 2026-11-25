@@ -88,6 +88,7 @@ Each member keeps their own entry up to date as their cards finish.
   - Project management: set up the Trello board and cards, coordinated the weekly plan, and tracked progress in [`doc/progress.md`](doc/progress.md).
 - **Veronika (Technical Lead + full-stack):** VE-02 Docker Compose deployment, Caddy HTTPS and same-origin routing, automatic migrations and demo seed, and deployment documentation.
   - VE-04 authenticated WebSocket fan-out over Redis, live vehicle timeline and watch alerts, and recovery after disconnects.
+  - VE-05 notification centre, persistent read/unread state, cross-session badge updates, and notices for relevant business and account changes.
 
 ## Features and ownership
 Each feature has one end-to-end owner (API + UI + tests):
@@ -124,6 +125,8 @@ Not claiming: three-language i18n (English + Arabic only), GDPR minor (its confi
 ### Module notes
 Each module owner adds how their module is built and how to demonstrate it. API details are in [`backend/README.md`](backend/README.md).
 
+**Notification centre (VE-05, Veronika):** open **Notifications** after the VE-04 demo and choose **Unread**, **Mark as read**, **Mark as unread** or **Mark all as read**. A second session for the same user updates without a refresh. To demonstrate creation, update and deletion outside the watchlist, add an existing account to an approved organisation, change its membership, and remove it. That account receives all three notices. See [the API guide](backend/README.md#notification-centre-ve-05) for event and recipient rules.
+
 **Real-time features (VE-04, Veronika):** Sign in as `consumer@sijil.demo` and open VIN `JTMHX01J5M4012345`. This demo account already watches that VIN. In a separate browser session, sign in as `falcon.staff@sijil.demo`, then submit a record for that VIN in **New service record**. The consumer's timeline and notification badge update without a page refresh. Take the consumer window offline, submit another record from the workshop window, then bring the consumer window back online. The socket resubscribes and the timeline and recent notifications catch up through REST. See the [WebSocket contract](contracts/websocket.asyncapi.json).
 
 **Advanced search (AG-06, Agegnew):** workshops and platform admins need to find records across many cars, not one VIN at a time.
@@ -157,4 +160,4 @@ Each module owner adds how their module is built and how to demonstrate it. API 
 ## Resources and AI use
 References: the official `ft_transcendence` subject v21.2; [FastAPI documentation](https://fastapi.tiangolo.com/); [SQLAlchemy](https://docs.sqlalchemy.org/); [Alembic](https://alembic.sqlalchemy.org/); [React](https://react.dev/); [Docker Compose](https://docs.docker.com/compose/); [Caddy](https://caddyserver.com/docs/); [NHTSA vPIC API](https://vpic.nhtsa.dot.gov/api/); ISO 3779 (VIN structure).
 
-For VE-02, AI assisted with drafting the Dockerfiles, Compose and Caddy configuration, the startup instructions, and the deployment checks. For VE-04, it assisted with wiring Redis, the authenticated WebSocket API, reconnect and refresh behaviour, and testing. Record other AI use here as those changes are reviewed. Each contributor should be able to explain their implementation and checks during peer evaluation.
+For VE-02, AI assisted with drafting the Dockerfiles, Compose and Caddy configuration, the startup instructions, and the deployment checks. For VE-04, it assisted with wiring Redis, the authenticated WebSocket API, reconnect and refresh behaviour, and testing. For VE-05, it assisted with the notification API, recipient rules, inbox UI and tests. Record other AI use here as those changes are reviewed. Each contributor should be able to explain their implementation and checks during peer evaluation.

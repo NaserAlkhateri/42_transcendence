@@ -4,6 +4,7 @@ export type LiveEvent =
   | { type: 'connection.ready' }
   | { type: 'timeline.subscribed' | 'record.added'; vin: string }
   | { type: 'notification.created'; notificationId: string }
+  | { type: 'notification.read_state_changed' }
 
 const RETRY_MAX_MS = 15_000
 const READY_TIMEOUT_MS = 10_000
@@ -157,6 +158,8 @@ export class LiveSocket {
         if (this.watches.has(data.vin)) this.emit({ type: message.type, vin: data.vin })
       } else if (message.type === 'notification.created' && typeof data.notification_id === 'string') {
         this.emit({ type: message.type, notificationId: data.notification_id })
+      } else if (message.type === 'notification.read_state_changed') {
+        this.emit({ type: message.type })
       }
     }
   }
