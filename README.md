@@ -19,7 +19,7 @@ Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for t
 
 ## Read these five files first (contributors)
 1. `README.md` - 42 compliance, module points, starting instructions and project conventions.
-2. [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md) - Stack, services, database, security and deployment contracts.
+2. [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md) - Repository layout, stack, data model, HTTP/WebSocket contracts, security and deployment decisions.
 3. [`doc/FEATURES.md`](doc/FEATURES.md) - Product requirements, roles, flows and acceptance checks.
 4. [`doc/TEAM.md`](doc/TEAM.md) - Roles, equally estimated Trello work and three-week delivery gates.
 5. [`doc/UAE_MARKET.md`](doc/UAE_MARKET.md) - UAE market rules for UI wording, formats, theme and demo data. Read it before any frontend work.

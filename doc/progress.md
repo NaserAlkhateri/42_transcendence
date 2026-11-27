@@ -27,7 +27,7 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | NA-02 Users, roles, role-based views | Naser | Done | Turning a consumer into entity staff needs memberships (NA-04) |
 | HA-01 Frontend bootstrap and app shell | Hassan | Done | |
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
-| VE-01 Architecture and contracts | Veronika | To Do | Was BU-01 (Burhan) |
+| VE-01 Architecture and contracts | Veronika | Ready for review | Was BU-01 (Burhan). Repository/API decisions in `doc/ARCHITECTURE.md`; WebSocket v1 in `contracts/websocket.asyncapi.json`; contract tests in `backend/tests/test_contracts.py` |
 | VE-02 Docker Compose, Caddy, HTTPS | Veronika | Ready for review | `docker compose up --build -d` runs migrations, seed and the HTTPS stack. See the [README](../README.md#instructions). |
 | VE-03 Private licence documents | Veronika | Ready for review | Registration and organisation uploads, private MinIO, platform-admin preview and audited removal. Builds on VE-02. |
 | VE-04 WebSocket live updates | Veronika | Ready for review | Authenticated WSS, Redis fan-out, live timeline and watch alerts, refetch on reconnect. Builds on VE-02. |
