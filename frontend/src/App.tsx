@@ -6,6 +6,7 @@ import { useAuth } from './auth/auth-context'
 import { Spinner } from './components/ui'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { AppLayout } from './layouts/AppLayout'
+import { LiveProvider } from './live/LiveProvider'
 import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { RequireAuth, RequireGuest, RequireRole } from './routes/guards'
@@ -33,7 +34,7 @@ export function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <LiveProvider><AppRoutes /></LiveProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

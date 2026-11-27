@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     minio_secret_key: str | None = None
     minio_secure: bool = True
     minio_documents_bucket: str = "sijil-licence-documents"
+    redis_url: str | None = None  # Local development can use one in-process relay when unset.
 
 
 @lru_cache
