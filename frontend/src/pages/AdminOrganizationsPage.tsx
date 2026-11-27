@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 
 import { MembersPanel } from '../components/MembersPanel'
+import { DocumentList } from '../components/LicenceDocuments'
 import { OrganizationFields } from '../components/OrganizationFields'
 import { Alert, Badge, Button, Card, FormAlert, Modal, Pagination, Select, Table, Textarea, TextField } from '../components/ui'
 import { errorMessage, http, serverFieldErrors } from '../lib/api'
+import { documentsPath } from '../lib/licenceDocuments'
 import {
   EMIRATES,
   EMPTY_ORGANIZATION_FORM,
@@ -190,7 +192,7 @@ function ManageOrganization({ id, onClose, onChanged }: { id: string; onClose: (
         <section aria-labelledby="review-heading" className="flex flex-col gap-3">
           <h3 id="review-heading">Review</h3>
           <p className="text-sm text-ink-600">
-            Check the business name and trade licence number before approving. Approved members can add service
+            Check the business name, trade licence number and uploaded documents before approving. Approved members can add service
             records; rejecting stops new records but keeps existing history.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -208,13 +210,25 @@ function ManageOrganization({ id, onClose, onChanged }: { id: string; onClose: (
           </div>
         </section>
 
+        <section aria-labelledby="licence-documents-heading" className="flex flex-col gap-2">
+          <h3 id="licence-documents-heading">Licence documents</h3>
+          <DocumentList documents={organization.documents} path={documentsPath(organization.id, true)}
+            onRemoved={(removed) => setOrganization((current) => current ? {
+              ...current, documents: current.documents.map((file) => file.id === removed.id ? removed : file),
+            } : current)} />
+        </section>
+
         <EditDetails key={organization.updated_at} organization={organization}
           onSave={(changes) => act(() => http.patch<AdminOrganizationDetail>(`/admin/organizations/${organization.id}`, changes))} />
 
         <MembersPanel organizationId={organization.id} onChanged={() => void onChanged()} />
 
         <div className="border-t border-ink-200 pt-4">
-          <Button variant="danger" onClick={() => setDeleting(true)}>Delete organisation</Button>
+          <Button variant="danger" disabled={organization.documents.some((file) => !file.deleted_at || file.removal_pending)}
+            onClick={() => setDeleting(true)}>Delete organisation</Button>
+          {organization.documents.some((file) => !file.deleted_at || file.removal_pending) ? (
+            <p className="mt-2 text-sm text-ink-600">Remove the licence documents before deleting the organisation.</p>
+          ) : null}
         </div>
       </div>
 

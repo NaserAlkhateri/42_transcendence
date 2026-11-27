@@ -13,13 +13,13 @@ from app.models.enums import (
     UserRole,
     UserStatus,
 )
-from app.models.organization import Organization, OrganizationMember
+from app.models.organization import Organization, OrganizationDocument, OrganizationMember
 from app.models.partner import ApiKey, PartnerWatchlist
 from app.models.user import User, UserSession
 from app.models.vehicle import Attachment, ServiceRecord, Vehicle
 
 __all__ = [
     "ApiKey", "Attachment", "AttachmentScope", "AuditEvent", "CorrectionReason", "MemberRole", "MemberStatus", "Notification",
-    "Organization", "OrganizationKind", "OrganizationMember", "OrganizationStatus", "PartnerWatchlist",
+    "Organization", "OrganizationDocument", "OrganizationKind", "OrganizationMember", "OrganizationStatus", "PartnerWatchlist",
     "RecordCategory", "ServiceRecord", "User", "UserRole", "UserSession", "UserStatus", "Vehicle", "Watchlist",
 ]

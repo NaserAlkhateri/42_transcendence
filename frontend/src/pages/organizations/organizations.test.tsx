@@ -19,7 +19,7 @@ function organization(overrides: Partial<Organization> = {}): Organization {
 function adminDetail(overrides: Partial<AdminOrganizationDetail> = {}): AdminOrganizationDetail {
   return { ...organization(), member_count: 1, record_count: 3, members: [
     { membership_id: 'm1', user_id: 'u1', full_name: 'Mariam Al Mansoori', email: 'owner@example.ae', role: 'entity_admin', status: 'active' },
-  ], ...overrides }
+  ], documents: [], ...overrides }
 }
 
 function membership(overrides: Partial<Membership> = {}): Membership {
@@ -216,6 +216,30 @@ describe('admin: organisations', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Rejection reasonLicence has expired.')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(calls.find((c) => c.path.endsWith('/reject'))?.body).toEqual({ reason: 'Licence has expired.' })
+  })
+
+  it('confirms removal and shows a marker in the review panel', async () => {
+    const document = {
+      id: 'doc-1', file_name: 'licence.pdf', content_type: 'application/pdf', size_bytes: 120,
+      created_at: '2026-04-11T08:00:00Z', deleted_at: null, removal_pending: false,
+    }
+    const pending = adminDetail({ documents: [document] })
+    const calls = stubApi(admin, {
+      'GET /api/v1/admin/organizations': () => page([pending]),
+      'GET /api/v1/organizations/org-1/members': () => json(pending.members),
+      'GET /api/v1/admin/organizations/org-1': () => json(pending),
+      'DELETE /api/v1/admin/organizations/org-1/documents/doc-1': () => json({
+        ...document, deleted_at: '2026-04-12T08:00:00Z',
+      }),
+    })
+    open('/admin/organizations')
+    fireEvent.click(await screen.findByRole('button', { name: 'Review Corniche Tyre Centre' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove document' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Remove licence document?' })
+    expect(calls.some((call) => call.method === 'DELETE')).toBe(false)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove document' }))
+    expect(await screen.findByText('Document removed')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Preview licence.pdf' })).not.toBeInTheDocument()
   })
 
   it('deletes after confirming, explaining that history stays', async () => {

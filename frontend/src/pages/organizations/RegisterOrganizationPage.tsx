@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth, type User } from '../../auth/auth-context'
 import { LegalNotice } from '../../components/LegalNotice'
+import { DocumentPicker, DocumentProgress } from '../../components/LicenceDocuments'
 import { OrganizationFields } from '../../components/OrganizationFields'
 import { Alert, Button, Card, FormAlert } from '../../components/ui'
 import { errorMessage, http, serverFieldErrors } from '../../lib/api'
+import { uploadDocuments, validateDocuments } from '../../lib/licenceDocuments'
 import {
   EMPTY_ORGANIZATION_FORM,
   ORGANIZATION_SERVER_FIELDS,
@@ -26,6 +28,8 @@ export function RegisterOrganizationPage() {
   const [errors, setErrors] = useState<FieldErrors<OrganizationField>>({})
   const [alert, setAlert] = useState<string>()
   const [busy, setBusy] = useState(false)
+  const [files, setFiles] = useState<File[]>([])
+  const [progress, setProgress] = useState<number>()
 
   if (user?.role === 'platform_admin') {
     return (
@@ -47,14 +51,27 @@ export function RegisterOrganizationPage() {
 
     setBusy(true)
     try {
+      const fileIssue = await validateDocuments(files)
+      if (fileIssue) { setAlert(fileIssue); return }
       const organization = await http.post<Organization>('/organizations', organizationPayload(form))
-      setUser(await http.get<User>('/me'))  // picks up the new membership for the nav and profile
-      navigate(`/organizations/${organization.id}`, { replace: true })
+      let documentUploadIssue: string | undefined
+      try {
+        if (files.length) {
+          setProgress(0)
+          await uploadDocuments(organization.id, files, setProgress)
+        }
+      } catch (error) {
+        documentUploadIssue = `Your registration was saved. Check the files below and retry any missing uploads. ${errorMessage(error)}`
+      }
+      // A saved registration must lead to its organisation even if upload or profile refresh fails.
+      await http.get<User>('/me').then(setUser).catch(() => {})
+      navigate(`/organizations/${organization.id}`, { replace: true, state: { documentUploadIssue } })
     } catch (error) {
       setErrors(serverFieldErrors(error, ORGANIZATION_SERVER_FIELDS))
       setAlert(errorMessage(error))
     } finally {
       setBusy(false)
+      setProgress(undefined)
     }
   }
 
@@ -71,6 +88,8 @@ export function RegisterOrganizationPage() {
         <form noValidate onSubmit={onSubmit} className="flex flex-col gap-4">
           <FormAlert message={alert} />
           <OrganizationFields form={form} errors={errors} onChange={setForm} />
+          <DocumentPicker files={files} onChange={setFiles} disabled={busy} />
+          <DocumentProgress percent={progress} />
           <LegalNotice action="registering your business" />
           <Button type="submit" loading={busy}>Submit for review</Button>
         </form>

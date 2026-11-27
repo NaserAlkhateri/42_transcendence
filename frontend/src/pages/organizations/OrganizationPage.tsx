@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 
 import { useAuth, type User } from '../../auth/auth-context'
+import { EntityDocuments } from '../../components/LicenceDocuments'
 import { MembersPanel } from '../../components/MembersPanel'
 import { OrganizationFields } from '../../components/OrganizationFields'
 import { Alert, Badge, Button, Card, FormAlert, Spinner } from '../../components/ui'
@@ -26,6 +27,7 @@ import type { FieldErrors } from '../../lib/validation'
  * and resubmit after a rejection. */
 export function OrganizationPage() {
   const { id = '' } = useParams()
+  const { state } = useLocation()
   const { user } = useAuth()
   const [organization, setOrganization] = useState<Organization>()
   const [loadError, setLoadError] = useState<string>()
@@ -69,6 +71,7 @@ export function OrganizationPage() {
       </div>
 
       <StatusNotice organization={organization} />
+      {state?.documentUploadIssue ? <Alert variant="warning">{state.documentUploadIssue}</Alert> : null}
 
       <Card title="Details">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
@@ -84,6 +87,7 @@ export function OrganizationPage() {
       {isEntityAdmin ? (
         <EditOrganization key={organization.updated_at} organization={organization} onSaved={setOrganization} />
       ) : null}
+      {isEntityAdmin ? <EntityDocuments key={organization.id} id={organization.id} /> : null}
 
       {isEntityAdmin && organization.status === 'approved' ? <MembersPanel organizationId={organization.id} /> : null}
       {isEntityAdmin && organization.status !== 'approved' ? (

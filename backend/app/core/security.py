@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
+from app.core.document_limits import DOCUMENT_MAX_BYTES, DOCUMENT_UPLOAD_PATH
 from app.core.errors import error_body
 
 
@@ -15,7 +16,9 @@ def install_security(app: FastAPI) -> None:
     async def harden(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         settings = get_settings()
         length = request.headers.get("content-length")
-        if length is not None and length.isdigit() and int(length) > settings.max_request_bytes:
+        is_upload = request.method == "POST" and DOCUMENT_UPLOAD_PATH.fullmatch(request.url.path)
+        limit = DOCUMENT_MAX_BYTES if is_upload else settings.max_request_bytes
+        if length is not None and length.isdigit() and int(length) > limit:
             return JSONResponse(
                 status_code=413, content=error_body("payload_too_large", "The request body is too large.")
             )

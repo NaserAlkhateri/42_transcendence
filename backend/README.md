@@ -67,7 +67,7 @@ A workshop or dealership registers and starts **pending**. A platform admin appr
 | PATCH | `/api/v1/organizations/{id}` | Its entity admins | Edit details. The licence number is locked once approved (409 `registration_locked`). |
 | POST | `/api/v1/organizations/{id}/resubmit` | Its entity admins | Rejected -> pending again |
 | GET | `/api/v1/admin/organizations?q=&status=&kind=&emirate=&page=&page_size=` | Platform admin | Pending first; member and record counts |
-| GET | `/api/v1/admin/organizations/{id}` | Platform admin | Details with members |
+| GET | `/api/v1/admin/organizations/{id}` | Platform admin | Details with members and licence document metadata |
 | POST | `/api/v1/admin/organizations` | Platform admin | Create; approved at once, no members |
 | PATCH | `/api/v1/admin/organizations/{id}` | Platform admin | Edit any field, including the licence number |
 | POST | `/api/v1/admin/organizations/{id}/approve` | Platform admin | Pending or rejected -> approved |
@@ -77,7 +77,12 @@ A workshop or dealership registers and starts **pending**. A platform admin appr
 - `emirate` must be one of the seven emirates, in official English spelling (`doc/UAE_MARKET.md`).
 - Approve and reject publish `organization.reviewed` (`organization_id`, `name`, `status`, `rejection_reason`) through `app/services/events.py`, for notifications (VE-05).
 - Every registration, edit, review, resubmission and deletion writes an `audit_events` row.
-- Licence documents (VE-03) are not shown on the review screen yet.
+
+## Organisation licence documents (VE-03)
+
+Active entity admins use `/api/v1/organizations/{id}/documents` to list (`GET`) and upload (`POST`) their files. The upload is a raw PDF, JPEG or PNG body with the matching `Content-Type`, a percent-encoded UTF-8 `X-File-Name` and the normal CSRF header. Limits are 5 MiB per file and ten active files per organisation. The API checks the extension, signature and format, rejects encrypted PDFs and PDFs with over 100 pages, and caps image dimensions at 20 megapixels.
+
+Appending `/{document_id}` downloads the original as an attachment. Platform admins use `/api/v1/admin/organizations/{id}/documents/{document_id}` to download or delete it. Deletion persists an audit event and a visible removal marker before physically purging the object. If storage is unavailable, the admin can retry; the file is already unavailable to viewers. Organisation deletion requires all its document objects to be purged first, then cascades the marker rows with its memberships. Objects are private in MinIO and accessible to clients only through these authorised routes. The API returns no object storage key or URL.
 
 ## Organization members and staff accounts (NA-04)
 
