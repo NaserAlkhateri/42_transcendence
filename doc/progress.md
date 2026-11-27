@@ -1,20 +1,21 @@
 # Sijil - Progress
 
-Last updated: 2026-11-24 (VE-03 licence documents ready for review; AG-06 advanced search and AG-07 import/export merged; NA-03 to NA-07 merged).
+Last updated: 2026-11-27 (VE-01 to VE-05 merged, PR #25; AG-06 advanced search and AG-07 import/export merged; NA-03 to NA-07 merged).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
 ## Summary
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
-- **Veronika joined on 2026-11-19 and took over Burhan's cards.** They kept their numbers and were renamed from `BU-` to `VE-` (VE-01 to VE-06, VE-08, VE-09). The VE-02 branch adds the single-command start for the week-1 demo.
+- **Veronika joined on 2026-11-19 and took over Burhan's cards.** They kept their numbers and were renamed from `BU-` to `VE-` (VE-01 to VE-06, VE-08, VE-09).
+- **VE-01 to VE-05 are done and merged** (Veronika's PRs #20 to #24, merged to `main` together in PR #25 on 2026-11-27). They add the architecture and WebSocket contract, the single-command HTTPS start with Docker Compose and Caddy, private licence document uploads, WebSocket live updates over Redis and the notification centre. All File upload, Real-time and Notification checklist items are ticked; the modules still need a peer review and Naser's PO sign-off.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
 - **Week 3 is done for Agegnew:** AG-06 advanced search and AG-07 CSV/JSON import and export were built on the `agegnew` branch and go to `main` on 2026-11-19, tested and verified in Chromium against the real backend. All Advanced search items (filters, sorting, pagination) and all Data export/import items (multiple formats, import with validation, bulk operations) are ticked. AG-08 (PM) is done: the README contributions, module notes and this log are up to date. The modules still need a peer review and Naser's PO sign-off.
-- **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for VE-03.
+- **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Licence documents are shown on the review screen since VE-03.
 - **NA-07 Privacy Policy and Terms of Service are merged** (PR #18; the card is still in Review on Trello). Both pages have real Sijil-specific content in English and Arabic (with a language switch and right-to-left layout), are linked from the footer, and are linked where people agree to them (signup, business registration).
 - **NA-06 security hardening is merged** (PR #17; the card is still in Review on Trello). It adds login, signup and password throttling, a new session after a password change, the last-platform-admin lock, platform-admin password resets, security headers, a 1 MB body limit and a cross-organization access test matrix. The full list, and what Caddy (VE-02), uploads (VE-03) and WebSockets (VE-04) must add, is in [`SECURITY.md`](SECURITY.md).
 - **NA-05 partner API is merged**: six key-authenticated endpoints at `/api/partner/v1` (vehicle summary and history, watchlist GET/POST/PUT/DELETE), admin-issued and revocable keys, per-key rate limiting with 429, and partner docs (`doc/PARTNER_API.md`, `/api/partner/v1/docs`). All eight Public API checklist items are ticked; it still needs a peer review and Naser's PO sign-off.
 - **NA-04 members and staff accounts is merged**: entity admins add and remove members, create staff accounts with a temporary password, and assign entity roles. With NA-03 + NA-04, all four Organization-system checklist items are ticked; the module still needs a peer review and Naser's PO sign-off.
-- On `main` (with NA-03): backend 172 tests, frontend 119 tests, lint and build clean. With NA-04: backend 186, frontend 125. With NA-05: backend 209, frontend 130. With NA-06: backend 229, frontend 136. With NA-07: frontend 146. With AG-06 + AG-07: backend 518, frontend 261.
+- On `main` (with NA-03): backend 172 tests, frontend 119 tests, lint and build clean. With NA-04: backend 186, frontend 125. With NA-05: backend 209, frontend 130. With NA-06: backend 229, frontend 136. With NA-07: frontend 146. With AG-06 + AG-07: backend 518, frontend 261. With VE-01 to VE-05: backend 531, frontend 265.
 - **Module points earned so far: 0.** Checklists are ticked for Frameworks (HA-01 + AG-01), ORM (AG-01), Advanced permissions (NA-02) and Custom design system (HA-02); each still needs Naser's PO sign-off.
 
 ## Card status
@@ -27,18 +28,18 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | NA-02 Users, roles, role-based views | Naser | Done | Turning a consumer into entity staff needs memberships (NA-04) |
 | HA-01 Frontend bootstrap and app shell | Hassan | Done | |
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
-| VE-01 Architecture and contracts | Veronika | Ready for review | Was BU-01 (Burhan). Repository/API decisions in `doc/ARCHITECTURE.md`; WebSocket v1 in `contracts/websocket.asyncapi.json`; contract tests in `backend/tests/test_contracts.py` |
-| VE-02 Docker Compose, Caddy, HTTPS | Veronika | Ready for review | `docker compose up --build -d` runs migrations, seed and the HTTPS stack. See the [README](../README.md#instructions). |
-| VE-03 Private licence documents | Veronika | Ready for review | Registration and organisation uploads, private MinIO, platform-admin preview and audited removal. Builds on VE-02. |
-| VE-04 WebSocket live updates | Veronika | Ready for review | Authenticated WSS, Redis fan-out, live timeline and watch alerts, refetch on reconnect. Builds on VE-02. |
-| VE-05 Notification centre | Veronika | Ready for review | Private inbox, unread badge and read state across sessions; watch alerts, organisation, membership and administrative account events. Builds on VE-04. |
+| VE-01 Architecture and contracts | Veronika | Done | Was BU-01 (Burhan). Repository/API decisions in `doc/ARCHITECTURE.md`; WebSocket v1 in `contracts/websocket.asyncapi.json`; contract tests in `backend/tests/test_contracts.py` |
+| VE-02 Docker Compose, Caddy, HTTPS | Veronika | Done | `docker compose up --build -d` runs migrations, seed and the HTTPS stack. See the [README](../README.md#instructions). |
+| VE-03 Private licence documents | Veronika | Done | Registration and organisation uploads, private MinIO, platform-admin preview and audited removal. Builds on VE-02. |
+| VE-04 WebSocket live updates | Veronika | Done | Authenticated WSS, Redis fan-out, live timeline and watch alerts, refetch on reconnect. Builds on VE-02. |
+| VE-05 Notification centre | Veronika | Done | Private inbox, unread badge and read state across sessions; watch alerts, organisation, membership and administrative account events. Builds on VE-04. |
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for VE-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
 | AG-06 Advanced search | Agegnew | Done | `/workshop/records` (own organisation), `/admin/records` (all). API in `backend/README.md` |
 | AG-07 CSV/JSON import and export | Agegnew | Done | Export on both search pages; import at `/workshop/records/import`. Privacy Policy updated for downloads |
 | AG-08 PM: coordination, demos, README | Agegnew | Done | README contributions and module notes, this progress log |
-| NA-03 Organizations: registration, approval, CRUD | Naser | Review (merged) | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents on the review screen wait for VE-03. |
+| NA-03 Organizations: registration, approval, CRUD | Naser | Review (merged) | `/organizations/register`, `/organizations/:id`, `/admin/organizations`. Licence documents are on the review screen since VE-03. |
 | NA-04 Organization members and staff accounts | Naser | Review (merged) | Members panel on `/organizations/:id` (entity admins) and in the admin Manage panel |
 | NA-05 Partner API (keys, rate limit, docs) | Naser | Review (merged) | `/admin/api-keys` page; guide in `doc/PARTNER_API.md` |
 | NA-06 Security hardening and review | Naser | Review (merged) | `doc/SECURITY.md`; admin "Reset password" on `/admin/users` |
