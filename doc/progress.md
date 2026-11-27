@@ -1,12 +1,12 @@
 # Sijil - Progress
 
-Last updated: 2026-11-19 (Veronika took over Burhan's cards, now `VE-`; AG-06 advanced search and AG-07 import/export go to `main` from `agegnew`; NA-03 to NA-07 merged).
+Last updated: 2026-11-23 (VE-02 deployment ready for review; AG-06 advanced search and AG-07 import/export merged; NA-03 to NA-07 merged).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
 ## Summary
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
-- **Veronika joined on 2026-11-19 and took over all of Burhan's cards**, none of which had been started. They kept their numbers and were renamed from `BU-` to `VE-` (VE-01 to VE-06, VE-08, VE-09). Her week-1 cards come first (VE-01 contracts, VE-02 Docker Compose + Caddy): until VE-02 lands there is no single-command start, which is part of the week-1 demo gate.
+- **Veronika joined on 2026-11-19 and took over Burhan's cards.** They kept their numbers and were renamed from `BU-` to `VE-` (VE-01 to VE-06, VE-08, VE-09). The VE-02 branch adds the single-command start for the week-1 demo.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
 - **Week 3 is done for Agegnew:** AG-06 advanced search and AG-07 CSV/JSON import and export were built on the `agegnew` branch and go to `main` on 2026-11-19, tested and verified in Chromium against the real backend. All Advanced search items (filters, sorting, pagination) and all Data export/import items (multiple formats, import with validation, bulk operations) are ticked. AG-08 (PM) is done: the README contributions, module notes and this log are up to date. The modules still need a peer review and Naser's PO sign-off.
 - **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for VE-03.
@@ -28,7 +28,7 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | HA-01 Frontend bootstrap and app shell | Hassan | Done | |
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
 | VE-01 Architecture and contracts | Veronika | To Do | Was BU-01 (Burhan) |
-| VE-02 Docker Compose, Caddy, HTTPS | Veronika | To Do | Was BU-02 (Burhan). Blocks the week-1 single-command start |
+| VE-02 Docker Compose, Caddy, HTTPS | Veronika | Ready for review | `docker compose up --build -d` runs migrations, seed and the HTTPS stack. See the [README](../README.md#instructions). |
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for VE-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |

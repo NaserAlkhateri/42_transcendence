@@ -65,11 +65,14 @@ Every API response carries:
 
 JSON responses also carry `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`. When `COOKIE_SECURE=true`, which is the default and required in deployment, responses carry `Strict-Transport-Security` (`app/core/security.py`).
 
+## HTTPS deployment (VE-02)
+
+VE-02 configures Caddy as the only published service. It redirects HTTP to HTTPS, applies security headers and a CSP to the SPA, and enforces `MAX_REQUEST_BYTES` on API traffic. Uvicorn trusts forwarded headers from the subnet shared with Caddy. PostgreSQL is on a separate internal network. Future services such as Redis and MinIO must also keep their ports private.
+
 ## Still to do in other cards
 
 | Card | Needed |
 | --- | --- |
-| **VE-02** Caddy | HTTPS for every browser and partner connection, with HTTP redirected to HTTPS. The same security headers for the frontend's static files, plus a CSP for the app, e.g. `default-src 'self'; frame-ancestors 'none'`. `request_body max_size` as a second limit. Run uvicorn with `--proxy-headers` (see Throttling). Keep PostgreSQL, Redis and MinIO off the public network. |
 | **VE-04** WebSockets | `wss://` only. Authenticate with the session cookie and check `Origin` on connect. Send a user only events they may see (watched VINs, their organization). Re-check the session on reconnect. |
 | **VE-03** Uploads | Check type by content (magic bytes), not only by extension. Cap the size on both ends. Store objects privately in MinIO under random names. Serve them only through an authorized route or a short-lived link, with `Content-Disposition: attachment`. Only platform admins delete, with an audit event. Uploads need their own limit above `MAX_REQUEST_BYTES`. |
 | **VE-08** CI | Run `pytest`, `npm test`, lint and `npm audit` on every PR. |

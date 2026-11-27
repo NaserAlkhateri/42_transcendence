@@ -1,0 +1,100 @@
+name: sijil
+
+x-database-env: &database-env
+  DATABASE_URL: postgresql+psycopg://sijil@db:5432/sijil
+  # libpq reads this separately, so passwords need no URL escaping.
+  PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: sijil
+      POSTGRES_USER: sijil
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [data]
+    healthcheck:
+      # The temporary server used at first initialization listens on a Unix socket only.
+      test: [CMD, pg_isready, -h, '127.0.0.1', -U, sijil, -d, sijil]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  init:
+    image: ${COMPOSE_PROJECT_NAME:-sijil}-api:local
+    pull_policy: never
+    command: [sh, /app/init.sh]
+    environment:
+      <<: *database-env
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+      SEED_DEMO_PASSWORD: ${SEED_DEMO_PASSWORD:-}
+      SEED_PARTNER_API_KEY: ${SEED_PARTNER_API_KEY:-}
+    networks: [data]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    image: ${COMPOSE_PROJECT_NAME:-sijil}-api:local
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command:
+      - uvicorn
+      - app.main:app
+      - --host=0.0.0.0
+      - --port=8000
+      - --proxy-headers
+      - --forwarded-allow-ips=${SIJIL_PROXY_SUBNET:-172.30.252.0/24}
+    environment:
+      <<: *database-env
+      COOKIE_SECURE: 'true'
+      MAX_REQUEST_BYTES: ${MAX_REQUEST_BYTES:-1000000}
+    networks: [proxy, data]
+    depends_on:
+      db:
+        condition: service_healthy
+      init:
+        condition: service_completed_successfully
+        restart: true
+    healthcheck:
+      test: [CMD, python, -c, "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=2).close()"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: .
+      dockerfile: deploy/Caddy.Dockerfile
+    environment:
+      SIJIL_HOST: ${SIJIL_HOST:-localhost}
+      MAX_REQUEST_BYTES: ${MAX_REQUEST_BYTES:-1000000}
+    ports:
+      - '${SIJIL_BIND_IP:-127.0.0.1}:80:80'
+      - '${SIJIL_BIND_IP:-127.0.0.1}:443:443'
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [proxy]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  proxy:
+    ipam:
+      config:
+        - subnet: ${SIJIL_PROXY_SUBNET:-172.30.252.0/24}
+  data:
+    internal: true
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

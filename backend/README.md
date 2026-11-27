@@ -4,6 +4,8 @@ FastAPI + SQLAlchemy 2 + Alembic on PostgreSQL. Design: `doc/ARCHITECTURE.md`.
 
 ## Run locally
 
+For the HTTPS Compose deployment and automatic seed, follow the [root README](../README.md#instructions). The steps below run FastAPI directly for backend development.
+
 Requires Python 3.11+, [uv](https://docs.astral.sh/uv/) and a PostgreSQL 16 database.
 
 ```bash

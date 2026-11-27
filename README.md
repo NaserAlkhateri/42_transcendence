@@ -2,8 +2,6 @@
 
 # Sijil - Vehicle History Platform
 
-> **Starter documentation only.** Replace the four `*_42_LOGIN` placeholders with the real 42 logins and update implementation details as features are built.
-
 ## Description
 Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for the 42 `ft_transcendence` project (subject v21.2), similar to Carfax in the US. Consumers enter a VIN, see the decoded car details and its service timeline, download a vehicle-only PDF and watch VINs for new records. Dealers and workshops register with their business licence; once a platform admin approves them, their staff submit append-only maintenance and repair records in a few clicks. Mileage decreases are **accepted and visibly flagged**; corrections remain linked to the original record. Outside businesses such as insurers can read vehicle histories through a key-protected partner API. This demo has **no official UAE data integration**.
 
@@ -28,15 +26,33 @@ Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for t
 
 **Build rule:** Implement the mandatory app and a demonstrable **14 module points** first. Do not claim partial modules. Add tests and documentation as you implement; do not silently alter immutable-history or privacy requirements. Reconcile changes with the PO, PM and Tech Lead.
 
-## Instructions (target deployment)
-Prerequisites: Docker Engine/Desktop and Docker Compose. Create `.env` from `.env.example`, fill local secrets and domain/port settings, then run:
+## Instructions
+
+Use Docker Desktop or Docker Engine with the Compose v2 plugin. Start Docker, make sure host ports 80 and 443 are free, and run these commands from the repository root:
 
 ```bash
 cp .env.example .env
+# Set POSTGRES_PASSWORD and SEED_DEMO_PASSWORD in .env before starting.
 docker compose up --build -d
 ```
 
-Target: one command starts the app, migrations and dependencies, with Caddy HTTPS. A demo seed process should load safe fictional organizations, staff and vehicle history. Document the exact local HTTPS URL and seed instructions when implemented. The project must work in current stable Chrome with no JavaScript console warnings/errors. The app works fully offline; internet access only adds richer VIN decoding.
+Choose two different passwords and keep `.env` local. Quote values containing literal `$` or `#` with single quotes in `.env`. The first build pulls base images and the locked dependencies. Compose waits for PostgreSQL to be ready, runs Alembic and loads the fictional demo data, then starts FastAPI and Caddy. `docker compose ps -a` should show a healthy `db` and `api`, a running `caddy`, and `init` with `Exited (0)`.
+
+### Open the local HTTPS demo
+
+Caddy listens on loopback and creates a local CA for `https://localhost`. Copy the public root certificate once per Compose data volume:
+
+```bash
+sijil_tls_dir=$(mktemp -d)
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt "$sijil_tls_dir/root.crt"
+curl --cacert "$sijil_tls_dir/root.crt" --fail https://localhost/health
+```
+
+The response should report `status` and `database` as `ok`. Follow the [Caddy local HTTPS instructions](https://caddyserver.com/docs/running#local-https-with-docker) to trust that certificate in your browser or system, then open [https://localhost](https://localhost) in Chrome. The API docs are at [https://localhost/api/v1/docs](https://localhost/api/v1/docs) and partner docs at [https://localhost/api/partner/v1/docs](https://localhost/api/partner/v1/docs). Try VIN `JTMHX01J5M4012345` or sign in as `consumer@sijil.demo` with the demo password from `.env`. See [the demo account list](backend/README.md#database-and-demo-data) for other roles and VINs. On an existing database the seed preserves existing users' passwords and data.
+
+`docker compose logs init api caddy` shows startup errors. `docker compose down` stops the stack and preserves data and the local CA in Docker volumes. Caddy is the only service with host ports. It redirects HTTP to HTTPS, serves the React build and proxies `/api/*` and `/health` to FastAPI. The `/api/v1/ws` path also goes through this proxy and supports the WebSocket upgrade once the backend endpoint is implemented in VE-04.
+
+For a hosted instance, set `SIJIL_HOST` to the public DNS hostname, set `SIJIL_BIND_IP` to the appropriate host interface, and set `SEED_DEMO_DATA=false` before the first start. Point DNS to the host and open TCP 80 and 443 so Caddy can obtain a public certificate. Use a fresh database for hosting. Turning the seed off on an existing demo database leaves the previous demo users in place.
 
 ## Technical stack and rationale
 - **React + Vite + TypeScript + Tailwind:** clear SPA, reusable design components and RTL layout.
@@ -70,6 +86,7 @@ Each member keeps their own entry up to date as their cards finish.
   - PDF report (AG-05): consumer-safe, in English and Arabic.
   - Advanced search (AG-06) and CSV/JSON import and export (AG-07), described under "Module notes" below.
   - Project management: set up the Trello board and cards, coordinated the weekly plan, and tracked progress in [`doc/progress.md`](doc/progress.md).
+- **Veronika (Technical Lead + full-stack):** VE-02 Docker Compose deployment, Caddy HTTPS and same-origin routing, automatic migrations and demo seed, and deployment documentation.
 
 ## Features and ownership
 Each feature has one end-to-end owner (API + UI + tests):
@@ -137,4 +154,4 @@ Each module owner adds how their module is built and how to demonstrate it. API 
 ## Resources and AI use
 References: the official `ft_transcendence` subject v21.2; [FastAPI documentation](https://fastapi.tiangolo.com/); [SQLAlchemy](https://docs.sqlalchemy.org/); [Alembic](https://alembic.sqlalchemy.org/); [React](https://react.dev/); [Docker Compose](https://docs.docker.com/compose/); [Caddy](https://caddyserver.com/docs/); [NHTSA vPIC API](https://vpic.nhtsa.dot.gov/api/); ISO 3779 (VIN structure).
 
-AI tools may assist with scaffolding, implementation, tests and documentation. Developers must review every generated change, understand its behavior, test it, and be able to explain it during peer evaluation. Before submission, replace this generic note with the **actual tasks and project areas** where AI was used, and document real individual contributions.
+For VE-02, AI assisted with drafting the Dockerfiles, Compose and Caddy configuration, the startup instructions, and the deployment checks. Record other AI use here as those changes are reviewed. Each contributor should be able to explain their implementation and checks during peer evaluation.
