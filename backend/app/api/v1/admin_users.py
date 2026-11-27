@@ -28,6 +28,7 @@ from app.models import (
 from app.schemas.auth import EffectiveRole
 from app.schemas.users import AdminUserOut, AdminUserUpdate, MembershipRoleUpdate, PasswordReset, UserPage
 from app.services.audit import record_audit
+from app.services.notifications import account_notice, member_notice, publish_notices
 from app.services.organizations import require_another_admin
 from app.services.users import memberships_by_user, to_admin_user_outs
 
@@ -155,7 +156,9 @@ def update_user(user_id: uuid.UUID, body: AdminUserUpdate, admin: PlatformAdmin,
             .where(UserSession.user_id == user.id, UserSession.revoked_at.is_(None))
             .values(revoked_at=func.now())
         )
+    notices = account_notice(db, user.id, "account.updated") if user.id != admin.id else []
     db.commit()
+    publish_notices(notices)
     return to_admin_user_outs(db, [user])[0]
 
 
@@ -194,7 +197,9 @@ def reset_password(user_id: uuid.UUID, admin: PlatformAdmin, db: DbSession) -> P
     user.must_change_password = True
     revoke_all_sessions(db, user.id)
     record_audit(db, admin, "user.password_reset", "user", user.id, {"email": user.email})
+    notices = account_notice(db, user.id, "account.password_reset")
     db.commit()
+    publish_notices(notices)
     return PasswordReset(temporary_password=temporary_password)
 
 
@@ -218,5 +223,8 @@ def update_membership_role(
              "changes": {"role": [str(membership.role), str(body.role)]}},
         )
         membership.role = body.role
+        organization = db.get(Organization, membership.organization_id)
+        notices = member_notice(db, organization, user.id, "membership.updated") if organization is not None else []
         db.commit()
+        publish_notices(notices)
     return to_admin_user_outs(db, [user])[0]

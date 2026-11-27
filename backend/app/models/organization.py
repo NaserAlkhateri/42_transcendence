@@ -34,3 +34,17 @@ class OrganizationMember(UUIDPrimaryKey, CreatedAt, Base):
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     role: Mapped[MemberRole] = mapped_column(db_enum(MemberRole, "member_role"))
     status: Mapped[MemberStatus] = mapped_column(db_enum(MemberStatus, "member_status"), default=MemberStatus.ACTIVE)
+
+
+class OrganizationDocument(UUIDPrimaryKey, CreatedAt, Base):
+    __tablename__ = "organization_documents"
+    __table_args__ = (CheckConstraint("size_bytes > 0", name="size_positive"),)
+
+    organization_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("organizations.id", ondelete="CASCADE"), index=True)
+    uploaded_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    object_key: Mapped[str] = mapped_column(String(512), unique=True)
+    file_name: Mapped[str] = mapped_column(String(255))
+    content_type: Mapped[str] = mapped_column(String(100))
+    size_bytes: Mapped[int]
+    deleted_at: Mapped[datetime | None]
+    purged_at: Mapped[datetime | None]

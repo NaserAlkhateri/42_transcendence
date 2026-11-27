@@ -1,12 +1,12 @@
 # Sijil - Progress
 
-Last updated: 2026-11-19 (Veronika took over Burhan's cards, now `VE-`; AG-06 advanced search and AG-07 import/export go to `main` from `agegnew`; NA-03 to NA-07 merged).
+Last updated: 2026-11-24 (VE-03 licence documents ready for review; AG-06 advanced search and AG-07 import/export merged; NA-03 to NA-07 merged).
 
 Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 
 ## Summary
 - **Week 1 is done for Agegnew, Naser and Hassan.** AG-01, AG-02, NA-01, NA-02, HA-01 and HA-02 are merged on `main` and verified in Chromium against the real backend and seed data.
-- **Veronika joined on 2026-11-19 and took over all of Burhan's cards**, none of which had been started. They kept their numbers and were renamed from `BU-` to `VE-` (VE-01 to VE-06, VE-08, VE-09). Her week-1 cards come first (VE-01 contracts, VE-02 Docker Compose + Caddy): until VE-02 lands there is no single-command start, which is part of the week-1 demo gate.
+- **Veronika joined on 2026-11-19 and took over Burhan's cards.** They kept their numbers and were renamed from `BU-` to `VE-` (VE-01 to VE-06, VE-08, VE-09). The VE-02 branch adds the single-command start for the week-1 demo.
 - **Week 2 is done for Agegnew:** AG-03 record submission, AG-04 corrections and AG-05 bilingual PDF report are merged and verified in Chromium against the real backend.
 - **Week 3 is done for Agegnew:** AG-06 advanced search and AG-07 CSV/JSON import and export were built on the `agegnew` branch and go to `main` on 2026-11-19, tested and verified in Chromium against the real backend. All Advanced search items (filters, sorting, pagination) and all Data export/import items (multiple formats, import with validation, bulk operations) are ticked. AG-08 (PM) is done: the README contributions, module notes and this log are up to date. The modules still need a peer review and Naser's PO sign-off.
 - **NA-03 organizations is merged** (registration, admin review, create/edit/delete). Showing licence documents on the review screen waits for VE-03.
@@ -27,8 +27,11 @@ Plan and ownership: [`TEAM.md`](TEAM.md). Board: https://trello.com/b/iRrhRK44
 | NA-02 Users, roles, role-based views | Naser | Done | Turning a consumer into entity staff needs memberships (NA-04) |
 | HA-01 Frontend bootstrap and app shell | Hassan | Done | |
 | HA-02 Custom design system | Hassan | Done | Follow-ups for HA-08 are on the Trello card |
-| VE-01 Architecture and contracts | Veronika | To Do | Was BU-01 (Burhan) |
-| VE-02 Docker Compose, Caddy, HTTPS | Veronika | To Do | Was BU-02 (Burhan). Blocks the week-1 single-command start |
+| VE-01 Architecture and contracts | Veronika | Ready for review | Was BU-01 (Burhan). Repository/API decisions in `doc/ARCHITECTURE.md`; WebSocket v1 in `contracts/websocket.asyncapi.json`; contract tests in `backend/tests/test_contracts.py` |
+| VE-02 Docker Compose, Caddy, HTTPS | Veronika | Ready for review | `docker compose up --build -d` runs migrations, seed and the HTTPS stack. See the [README](../README.md#instructions). |
+| VE-03 Private licence documents | Veronika | Ready for review | Registration and organisation uploads, private MinIO, platform-admin preview and audited removal. Builds on VE-02. |
+| VE-04 WebSocket live updates | Veronika | Ready for review | Authenticated WSS, Redis fan-out, live timeline and watch alerts, refetch on reconnect. Builds on VE-02. |
+| VE-05 Notification centre | Veronika | Ready for review | Private inbox, unread badge and read state across sessions; watch alerts, organisation, membership and administrative account events. Builds on VE-04. |
 | AG-03 Service record submission + mileage flags | Agegnew | Done | `/workshop/records/new`; `record.added` is published for VE-04 |
 | AG-04 Corrections linked to originals | Agegnew | Done | `/workshop/corrections`; a record is corrected once (chain to fix a fix) |
 | AG-05 Consumer-safe PDF report | Agegnew | Done | English + Arabic; download button on `/vehicles/:vin` |
@@ -103,7 +106,7 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 - **Hassan (HA-04):** the Watch button lives in `src/components/WatchVinButton.tsx`. Guests are sent to log in and come back to the VIN. Wire the signed-in state to the watchlist API there.
 - **Veronika (VE-02):** the session and CSRF cookies are `Secure`, so the stack has to be served over HTTPS through Caddy. Caddy should route `/api/*` to FastAPI and everything else to the frontend build. `COOKIE_SECURE` and `SESSION_TTL_HOURS` are in `backend/.env.example`.
 - **Agegnew (AG-03 onward):** use `require_org_role` for record submission. Deleting a user leaves their service records in place, with `staff_id` set to NULL and the stored `staff_name` kept.
-- **Veronika (VE-03, VE-05):** registration and review are in place (NA-03). For VE-03, add the licence documents to `GET /api/v1/admin/organizations/{id}` and show them in the Manage panel on `/admin/organizations`; members upload from `/organizations/:id`. For VE-05, `organization.reviewed` is published on approve and reject (`organization_id`, `name`, `status`, `rejection_reason`).
+- **Veronika (VE-05):** `organization.reviewed` is published on approve and reject (`organization_id`, `name`, `status`, `rejection_reason`).
 - **Hassan (HA-04):** the partner watchlist (`partner_watchlists`) is separate from the consumer one (`watchlists`). Watching a VIN with no history creates its `vehicles` row; the timeline still answers `vehicle: null` until the first record exists (`services/timeline.py:has_history`), so the page keeps offering Watch and hides the PDF button. Use the same helper if the consumer watch creates vehicles too.
 - **Everyone: keep the legal pages true.** The Privacy Policy already describes licence documents (VE-03), in-app notifications (VE-05) and VIN decoding through NHTSA vPIC (VE-09), as designed in ARCHITECTURE.md. If your card stores, shows or shares data differently, or adds browser storage (e.g. a language preference in HA-03), update `frontend/src/pages/legal/privacy.ts` / `terms.ts` and `LEGAL_UPDATED` in the same PR. Hassan: the Arabic text needs a native-speaker check in HA-03, and the pages' own language switch can hand over to the app-wide one.
 - **Entity roles need an approved organization:** since NA-03, `effective_role` only counts memberships of approved organizations. A pending registrant is `consumer` in the UI, but `require_org_role` still lets them manage their own registration.
@@ -116,7 +119,6 @@ Current results on `main`: backend 94 tests pass, frontend 67 tests pass, lint a
 ## Open items
 - Veronika: when wiring Caddy (VE-02), run uvicorn with `--proxy-headers` so per-IP limits see real clients (doc/SECURITY.md).
 - A wrong-password login still shows the API's 401 in the console. That is the failure path, not a page load.
-- NA-03's review screen shows no licence documents until VE-03 lands.
 - Entity admins can't reset a member's password (by design). Platform admins can, from `/admin/users` (NA-06).
 - Records from one import share one `created_at` (the database's `now()` is per transaction), so "newest first" orders a batch by record id, not file order.
 - `tests/test_partner_api.py::test_watch_lifecycle_get_post_put_delete` fails on some runs (seen on 2026-10-19 on `main`, then passed). Naser to check whether it is time-dependent.

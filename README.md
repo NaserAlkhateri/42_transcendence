@@ -2,8 +2,6 @@
 
 # Sijil - Vehicle History Platform
 
-> **Starter documentation only.** Replace the four `*_42_LOGIN` placeholders with the real 42 logins and update implementation details as features are built.
-
 ## Description
 Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for the 42 `ft_transcendence` project (subject v21.2), similar to Carfax in the US. Consumers enter a VIN, see the decoded car details and its service timeline, download a vehicle-only PDF and watch VINs for new records. Dealers and workshops register with their business licence; once a platform admin approves them, their staff submit append-only maintenance and repair records in a few clicks. Mileage decreases are **accepted and visibly flagged**; corrections remain linked to the original record. Outside businesses such as insurers can read vehicle histories through a key-protected partner API. This demo has **no official UAE data integration**.
 
@@ -21,22 +19,40 @@ Sijil (سجل, "record") is a UAE-focused vehicle service-history **demo** for t
 
 ## Read these five files first (contributors)
 1. `README.md` - 42 compliance, module points, starting instructions and project conventions.
-2. [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md) - Stack, services, database, security and deployment contracts.
+2. [`doc/ARCHITECTURE.md`](doc/ARCHITECTURE.md) - Repository layout, stack, data model, HTTP/WebSocket contracts, security and deployment decisions.
 3. [`doc/FEATURES.md`](doc/FEATURES.md) - Product requirements, roles, flows and acceptance checks.
 4. [`doc/TEAM.md`](doc/TEAM.md) - Roles, equally estimated Trello work and three-week delivery gates.
 5. [`doc/UAE_MARKET.md`](doc/UAE_MARKET.md) - UAE market rules for UI wording, formats, theme and demo data. Read it before any frontend work.
 
 **Build rule:** Implement the mandatory app and a demonstrable **14 module points** first. Do not claim partial modules. Add tests and documentation as you implement; do not silently alter immutable-history or privacy requirements. Reconcile changes with the PO, PM and Tech Lead.
 
-## Instructions (target deployment)
-Prerequisites: Docker Engine/Desktop and Docker Compose. Create `.env` from `.env.example`, fill local secrets and domain/port settings, then run:
+## Instructions
+
+Use Docker Desktop or Docker Engine with the Compose v2 plugin. Start Docker, make sure host ports 80 and 443 are free, and run these commands from the repository root:
 
 ```bash
 cp .env.example .env
+# Set POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD and SEED_DEMO_PASSWORD in .env before starting.
 docker compose up --build -d
 ```
 
-Target: one command starts the app, migrations and dependencies, with Caddy HTTPS. A demo seed process should load safe fictional organizations, staff and vehicle history. Document the exact local HTTPS URL and seed instructions when implemented. The project must work in current stable Chrome with no JavaScript console warnings/errors. The app works fully offline; internet access only adds richer VIN decoding.
+Choose distinct passwords, use at least eight characters for `MINIO_ROOT_PASSWORD`, and keep `.env` local. Quote values containing literal `$` or `#` with single quotes in `.env`. The first build pulls base images and locked dependencies and builds the pinned MinIO Community Edition source. Compose starts PostgreSQL, MinIO and Redis, applies Alembic migrations, loads the fictional demo data, then starts FastAPI and Caddy. `docker compose ps -a` should show healthy `db`, `minio`, `redis` and `api` services, a running `caddy`, and `init` with `Exited (0)`.
+
+### Open the local HTTPS demo
+
+Caddy listens on loopback and creates a local CA for `https://localhost`. Copy the public root certificate once per Compose data volume:
+
+```bash
+sijil_tls_dir=$(mktemp -d)
+docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt "$sijil_tls_dir/root.crt"
+curl --cacert "$sijil_tls_dir/root.crt" --fail https://localhost/health
+```
+
+The response should report `status` and `database` as `ok`. Follow the [Caddy local HTTPS instructions](https://caddyserver.com/docs/running#local-https-with-docker) to trust that certificate in your browser or system, then open [https://localhost](https://localhost) in Chrome. The API docs are at [https://localhost/api/v1/docs](https://localhost/api/v1/docs) and partner docs at [https://localhost/api/partner/v1/docs](https://localhost/api/partner/v1/docs). Try VIN `JTMHX01J5M4012345` or sign in as `consumer@sijil.demo` with the demo password from `.env`. See [the demo account list](backend/README.md#database-and-demo-data) for other roles and VINs. On an existing database the seed preserves existing users' passwords and data.
+
+`docker compose logs init minio redis api caddy` shows startup errors. `docker compose down` stops the stack and preserves the database, licence documents and local CA in Docker volumes. Caddy is the only service with host ports. It redirects HTTP to HTTPS, serves the React build, and proxies `/api/*`, including `wss://localhost/api/v1/ws`, and `/health` to FastAPI.
+
+For a hosted instance, set `SIJIL_HOST` to the public DNS hostname, set `SIJIL_BIND_IP` to the appropriate host interface, and set `SEED_DEMO_DATA=false` before the first start. Point DNS to the host and open TCP 80 and 443 so Caddy can obtain a public certificate. Use a fresh database for hosting. Turning the seed off on an existing demo database leaves the previous demo users in place.
 
 ## Technical stack and rationale
 - **React + Vite + TypeScript + Tailwind:** clear SPA, reusable design components and RTL layout.
@@ -70,6 +86,10 @@ Each member keeps their own entry up to date as their cards finish.
   - PDF report (AG-05): consumer-safe, in English and Arabic.
   - Advanced search (AG-06) and CSV/JSON import and export (AG-07), described under "Module notes" below.
   - Project management: set up the Trello board and cards, coordinated the weekly plan, and tracked progress in [`doc/progress.md`](doc/progress.md).
+- **Veronika (Technical Lead + full-stack):** VE-02 Docker Compose deployment, Caddy HTTPS and same-origin routing, automatic migrations and demo seed, and deployment documentation.
+  - VE-03 private licence document uploads, preview and platform-admin review, with audited removal and role tests.
+  - VE-04 authenticated WebSocket fan-out over Redis, live vehicle timeline and watch alerts, and recovery after disconnects.
+  - VE-05 notification centre, persistent read/unread state, cross-session badge updates, and notices for relevant business and account changes.
 
 ## Features and ownership
 Each feature has one end-to-end owner (API + UI + tests):
@@ -106,6 +126,12 @@ Not claiming: three-language i18n (English + Arabic only), GDPR minor (its confi
 ### Module notes
 Each module owner adds how their module is built and how to demonstrate it. API details are in [`backend/README.md`](backend/README.md).
 
+**File upload and management (VE-03, Veronika):** register a demo business and select a fictional PDF, JPEG or PNG licence document. Use the registration form to preview the file and submit it with visible upload progress. On the organisation page its entity admin can upload, preview and download. Sign in as `admin@sijil.demo`, open the business in Administration → Organisations, and preview or remove the document. The organisation page shows **Document removed** after removal. PDF preview shows the first page. Download the document to review every page. The archived [MinIO Community Edition](https://github.com/minio/minio) is pinned for this demo and isolated from the host; use a maintained private S3-compatible service for production.
+
+**Notification centre (VE-05, Veronika):** open **Notifications** after the VE-04 demo and choose **Unread**, **Mark as read**, **Mark as unread** or **Mark all as read**. A second session for the same user updates without a refresh. To demonstrate creation, update and deletion outside the watchlist, add an existing account to an approved organisation, change its membership, and remove it. That account receives all three notices. See [the API guide](backend/README.md#notification-centre-ve-05) for event and recipient rules.
+
+**Real-time features (VE-04, Veronika):** Sign in as `consumer@sijil.demo` and open VIN `JTMHX01J5M4012345`. This demo account already watches that VIN. In a separate browser session, sign in as `falcon.staff@sijil.demo`, then submit a record for that VIN in **New service record**. The consumer's timeline and notification badge update without a page refresh. Take the consumer window offline, submit another record from the workshop window, then bring the consumer window back online. The socket resubscribes and the timeline and recent notifications catch up through REST. See the [WebSocket contract](contracts/websocket.asyncapi.json).
+
 **Advanced search (AG-06, Agegnew):** workshops and platform admins need to find records across many cars, not one VIN at a time.
 - **Pages:** workshop staff search their own organisation's records at `/workshop/records`. Platform admins search every organisation at `/admin/records`.
 - **Filters:** part of a VIN, make, model, model year, service date, odometer range, category, work codes, mileage flag, originals or corrections, corrected or not, staff name, and organisation (admins only).
@@ -137,4 +163,4 @@ Each module owner adds how their module is built and how to demonstrate it. API 
 ## Resources and AI use
 References: the official `ft_transcendence` subject v21.2; [FastAPI documentation](https://fastapi.tiangolo.com/); [SQLAlchemy](https://docs.sqlalchemy.org/); [Alembic](https://alembic.sqlalchemy.org/); [React](https://react.dev/); [Docker Compose](https://docs.docker.com/compose/); [Caddy](https://caddyserver.com/docs/); [NHTSA vPIC API](https://vpic.nhtsa.dot.gov/api/); ISO 3779 (VIN structure).
 
-AI tools may assist with scaffolding, implementation, tests and documentation. Developers must review every generated change, understand its behavior, test it, and be able to explain it during peer evaluation. Before submission, replace this generic note with the **actual tasks and project areas** where AI was used, and document real individual contributions.
+For VE-02, AI assisted with drafting the Dockerfiles, Compose and Caddy configuration, the startup instructions, and the deployment checks. For VE-03, it assisted with the document API, storage integration, upload and preview UI, and verification. For VE-04, it assisted with wiring Redis, the authenticated WebSocket API, reconnect and refresh behaviour, and testing. For VE-05, it assisted with the notification API, recipient rules, inbox UI and tests. Record other AI use here as those changes are reviewed. Each contributor should be able to explain their implementation and checks during peer evaluation.

@@ -22,7 +22,13 @@ class Settings(BaseSettings):
     login_window_seconds: int = 900
     signups_per_ip: int = 10  # per hour
     password_failures_per_user: int = 10  # wrong current passwords on /me/password, per login_window_seconds
-    max_request_bytes: int = 1_000_000  # JSON API bodies; file uploads (VE-03) need their own, larger limit
+    max_request_bytes: int = 1_000_000  # Document uploads have a separate route-specific limit.
+    minio_endpoint: str | None = None  # host:port, without a URL scheme
+    minio_access_key: str | None = None
+    minio_secret_key: str | None = None
+    minio_secure: bool = True
+    minio_documents_bucket: str = "sijil-licence-documents"
+    redis_url: str | None = None  # Local development can use one in-process relay when unset.
 
 
 @lru_cache

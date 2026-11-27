@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../auth/auth-context'
+import { LiveNotifications } from '../components/LiveNotifications'
 import { Alert, Button, Icon, IconButton, buttonClass } from '../components/ui'
 import { errorMessage } from '../lib/api'
 import { navItemsFor } from '../lib/roles'
@@ -80,6 +81,7 @@ function Header() {
           <Link to="/" className="text-lg font-bold text-brand-800">
             <Icon name="car" className="inline me-2" />Sijil
           </Link>
+          {user && !user.must_change_password ? <LiveNotifications key={user.id} /> : null}
           <div className="hidden items-center gap-1 sm:flex">{links}</div>
           {user !== undefined ? (
             <IconButton icon={open ? 'close' : 'menu'} label={open ? 'Close menu' : 'Open menu'} className="sm:hidden" aria-expanded={open} aria-controls={menuId} onClick={() => setOpen(value => !value)} />

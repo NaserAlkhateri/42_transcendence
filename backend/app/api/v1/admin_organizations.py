@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.auth.permissions import PlatformAdmin
 from app.core.errors import ApiError
 from app.db.session import get_db
-from app.models import MemberStatus, Organization, OrganizationKind, OrganizationMember, OrganizationStatus
+from app.models import MemberStatus, Organization, OrganizationDocument, OrganizationKind, OrganizationMember, OrganizationStatus
 from app.schemas.organizations import (
     AdminOrganizationDetail,
     Emirate,
@@ -23,6 +23,7 @@ from app.schemas.organizations import (
 )
 from app.services import events
 from app.services.audit import record_audit
+from app.services.notifications import organization_notices, publish_notices
 from app.services.organizations import (
     apply_changes,
     get_organization,
@@ -114,7 +115,9 @@ def update_organization(
         except IntegrityError as exc:
             db.rollback()
             raise licence_taken_error() from exc
+        notices = organization_notices(db, organization, "organization.updated", actor_id=admin.id)
         db.commit()
+        publish_notices(notices)
     return to_admin_detail(db, organization)
 
 
@@ -134,7 +137,9 @@ def approve_organization(organization_id: uuid.UUID, admin: PlatformAdmin, db: D
         db, admin, "organization.approved", "organization", organization.id,
         {"changes": {"status": [str(previous), "approved"]}},
     )
+    notices = organization_notices(db, organization, "organization.reviewed", actor_id=admin.id)
     db.commit()
+    publish_notices(notices)
     events.publish("organization.reviewed", review_payload(organization))
     return to_admin_detail(db, organization)
 
@@ -157,7 +162,9 @@ def reject_organization(
         db, admin, "organization.rejected", "organization", organization.id,
         {"changes": {"status": [str(previous), "rejected"]}, "reason": body.reason},
     )
+    notices = organization_notices(db, organization, "organization.reviewed", actor_id=admin.id)
     db.commit()
+    publish_notices(notices)
     events.publish("organization.reviewed", review_payload(organization))
     return to_admin_detail(db, organization)
 
@@ -166,7 +173,13 @@ def reject_organization(
 def delete_organization(organization_id: uuid.UUID, admin: PlatformAdmin, db: DbSession) -> None:
     """Really delete the organization and its memberships (DB cascade). Its service records stay, showing the
     stored organization name with organization_id set to NULL. The member accounts themselves are kept."""
-    organization = get_organization(db, organization_id)
+    organization = db.scalar(select(Organization).where(Organization.id == organization_id).with_for_update())
+    if organization is None:
+        raise ApiError(404, "organization_not_found", "Organization not found.")
+    if db.scalar(select(OrganizationDocument.id).where(
+        OrganizationDocument.organization_id == organization_id, OrganizationDocument.purged_at.is_(None),
+    ).limit(1)) is not None:
+        raise ApiError(409, "organization_has_documents", "Remove all licence documents before deleting this organisation.")
     member_count = db.scalar(
         select(func.count()).where(
             OrganizationMember.organization_id == organization.id, OrganizationMember.status == MemberStatus.ACTIVE
@@ -181,6 +194,9 @@ def delete_organization(organization_id: uuid.UUID, admin: PlatformAdmin, db: Db
             "active_members": member_count,
         },
     )
+    # Snapshot recipients before the membership rows cascade.
+    notices = organization_notices(db, organization, "organization.deleted", actor_id=admin.id)
     db.expunge(organization)
     db.execute(delete(Organization).where(Organization.id == organization_id))
     db.commit()
+    publish_notices(notices)

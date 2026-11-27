@@ -95,6 +95,35 @@ async function csrfToken(signal: AbortSignal): Promise<string> {
   return body.csrf_token
 }
 
+function responseError(status: number, payload: unknown, silent401 = false): ApiError {
+  if (status === 401 && !silent401) onUnauthorized?.()
+  const error = (payload as { error?: { code: string; message: string; details?: FieldIssue[] } } | null)?.error
+  if (status === 403 && error?.code === 'forbidden') onForbidden?.()
+  return new ApiError(status, error?.code ?? 'http_error', error?.message ?? 'Something went wrong. Please try again.', error?.details)
+}
+
+/** XMLHttpRequest exposes upload progress while using the same session and CSRF rules as fetch. */
+export async function uploadWithProgress(path: string, file: File, onProgress: (fraction: number) => void): Promise<void> {
+  const token = await csrfToken(AbortSignal.timeout(DEFAULT_TIMEOUT_MS))
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest()
+    request.upload.onprogress = (event) => onProgress(event.loaded / (event.lengthComputable ? event.total : file.size))
+    request.open('POST', `${API_PREFIX}${path}`)
+    request.timeout = 120_000
+    request.responseType = 'json'
+    request.setRequestHeader('Content-Type', file.type)
+    request.setRequestHeader('X-File-Name', encodeURIComponent(file.name))
+    request.setRequestHeader('X-CSRF-Token', token)
+    request.onload = () => {
+      if (request.status === 201) resolve()
+      else reject(responseError(request.status, request.response))
+    }
+    request.onerror = () => reject(new ApiError(0, 'network_error', 'Could not reach the server. Please try again.'))
+    request.ontimeout = () => reject(new ApiError(0, 'timeout', 'The upload timed out. Please try again.'))
+    request.send(file)
+  })
+}
+
 /** Combine the caller's signal with a timeout. */
 function withTimeout(outer: AbortSignal | undefined, timeoutMs: number) {
   const controller = new AbortController()
@@ -152,15 +181,7 @@ export async function apiResponse(path: string, options: ApiOptions = {}): Promi
 
   if (!response.ok) {
     const payload: unknown = await response.json().catch(() => null)
-    if (response.status === 401 && !options.silent401) onUnauthorized?.()
-    const error = (payload as { error?: { code: string; message: string; details?: FieldIssue[] } } | null)?.error
-    if (response.status === 403 && error?.code === 'forbidden') onForbidden?.()
-    throw new ApiError(
-      response.status,
-      error?.code ?? 'http_error',
-      error?.message ?? 'Something went wrong. Please try again.',
-      error?.details,
-    )
+    throw responseError(response.status, payload, options.silent401)
   }
   return response
 }

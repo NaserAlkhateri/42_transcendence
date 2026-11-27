@@ -12,6 +12,7 @@ from app.schemas.organizations import (
     OrganizationOut,
     OrganizationUpdate,
 )
+from app.services.documents import list_documents
 
 
 def get_organization(db: Session, organization_id: uuid.UUID) -> Organization:
@@ -81,7 +82,10 @@ def member_out(membership: OrganizationMember, user: User) -> OrganizationMember
 
 
 def to_admin_detail(db: Session, organization: Organization) -> AdminOrganizationDetail:
-    return AdminOrganizationDetail(**to_admin_outs(db, [organization])[0].model_dump(), members=members_of(db, organization.id))
+    return AdminOrganizationDetail(
+        **to_admin_outs(db, [organization])[0].model_dump(), members=members_of(db, organization.id),
+        documents=list_documents(db, organization.id),
+    )
 
 
 def review_payload(organization: Organization) -> dict:
